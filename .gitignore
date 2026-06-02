@@ -1,0 +1,26 @@
+# Simulation and compile artifacts
+work/
+transcript
+vsim.wlf
+*.wlf
+*.log
+*.key
+*.vstf
+*.vdb/
+*.history/
+
+# Synopsys VCS artifacts
+simv
+simv.daidir/
+csrc/
+ucli.key
+
+# Cadence Xcelium/Incisive artifacts
+xcelium.d/
+xrun.log
+xrun.history
+
+# OS/Editor temp files
+*~
+.DS_Store
+Thumbs.db
