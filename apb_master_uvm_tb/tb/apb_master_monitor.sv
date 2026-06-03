@@ -17,7 +17,7 @@ class apb_master_monitor extends uvm_monitor;
   `uvm_component_utils(apb_master_monitor)
 
   // Handle to the virtual interface
-  virtual apb_master_if.monitor vif;
+  virtual apb_master_if vif;
 
   // Analysis port: broadcasts observed transactions
   uvm_analysis_port #(apb_master_seq_item) ap;

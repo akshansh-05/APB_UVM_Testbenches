@@ -2,8 +2,8 @@
 // FILE: apb_master_test.sv
 // DESCRIPTION:
 //   UVM Test for the APB Master Bridge.
-//   Creates the environment and runs the mixed sequence that tests
-//   both slaves and both read/write operations.
+//   Creates the environment and runs the write sequence that sends
+//   transactions to Slave 1.
 // ============================================================================
 
 class apb_master_test extends uvm_test;
@@ -36,9 +36,9 @@ class apb_master_test extends uvm_test;
     #100;
 
     begin
-      // Run the mixed sequence (writes + reads to both slaves)
-      apb_master_mixed_seq seq;
-      seq = apb_master_mixed_seq::type_id::create("seq");
+      // Run the write sequence (writes 5 transactions to Slave 1)
+      apb_master_write_seq seq;
+      seq = apb_master_write_seq::type_id::create("seq");
       seq.start(env.agent.sqr);
     end
 

@@ -23,7 +23,7 @@ class apb_master_driver extends uvm_driver #(apb_master_seq_item);
   `uvm_component_utils(apb_master_driver)
 
   // Handle to the virtual interface
-  virtual apb_master_if.driver vif;
+  virtual apb_master_if vif;
 
   // ---- Constructor ----
   function new(string name = "apb_master_driver", uvm_component parent);
