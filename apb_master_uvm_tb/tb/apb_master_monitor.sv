@@ -37,6 +37,7 @@ class apb_master_monitor extends uvm_monitor;
 
   // ---- Run Phase: Watch for completed APB transfers ----
   task run_phase(uvm_phase phase);
+    apb_master_seq_item item;
     forever begin
       @(vif.monitor_cb);
 
@@ -44,7 +45,7 @@ class apb_master_monitor extends uvm_monitor;
       if (vif.monitor_cb.PENABLE && vif.monitor_cb.PREADY) begin
 
         // Create a new transaction and fill in observed values
-        apb_master_seq_item item = apb_master_seq_item::type_id::create("item");
+        item = apb_master_seq_item::type_id::create("item");
 
         // Capture APB bus signals (DUT outputs)
         item.paddr   = vif.monitor_cb.PADDR;
