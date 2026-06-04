@@ -53,7 +53,7 @@ class apb_master_seq_item extends uvm_sequence_item;
   endfunction
 
   // ---- convert2string: Human-readable log output ----
-  function string convert2string();
+  virtual function string convert2string();
     return $sformatf("addr=0x%03h wdata=0x%02h read=%0b | paddr=0x%03h pwdata=0x%02h pwrite=%0b rdata=0x%02h psel1=%0b psel2=%0b pslverr=%0b",
                      addr, wdata, read, paddr, pwdata, pwrite, rdata, psel1, psel2, pslverr);
   endfunction

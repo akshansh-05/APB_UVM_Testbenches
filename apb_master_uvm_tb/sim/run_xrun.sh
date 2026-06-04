@@ -11,6 +11,8 @@
 # ==============================================================================
 
 xrun -uvm -sv \
+  -timescale 1ns/1ns \
+  -access +rwc \
   +incdir+../tb \
   ../tb/apb_master_if.sv \
   ../tb/apb_master_pkg.sv \

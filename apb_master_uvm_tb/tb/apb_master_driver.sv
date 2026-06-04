@@ -41,6 +41,7 @@ class apb_master_driver extends uvm_driver #(apb_master_seq_item);
   task run_phase(uvm_phase phase);
 
     // Initialize all system-side signals to idle
+    @(vif.driver_cb);  // Wait for the first clock edge before driving
     vif.driver_cb.transfer        <= 0;
     vif.driver_cb.READ_WRITE      <= 0;
     vif.driver_cb.apb_write_paddr <= 0;
