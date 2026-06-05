@@ -47,6 +47,7 @@ class apb_master_seq_item extends uvm_sequence_item;
   bit [7:0] rdata;              // Observed apb_read_data_out (read data from slave)
   bit       psel1;              // Observed PSEL1 (should be 1 when paddr[8]=0)
   bit       psel2;              // Observed PSEL2 (should be 1 when paddr[8]=1)
+  bit       penable;            // Observed PENABLE (should be 1 during ACCESS phase)
   bit       pslverr;            // Observed PSLVERR (should be 0 for valid transfers)
 
   // ===================== CONSTRAINTS =====================
@@ -76,6 +77,7 @@ class apb_master_seq_item extends uvm_sequence_item;
     `uvm_field_int(rdata,   UVM_ALL_ON)
     `uvm_field_int(psel1,   UVM_ALL_ON)
     `uvm_field_int(psel2,   UVM_ALL_ON)
+    `uvm_field_int(penable, UVM_ALL_ON)
     `uvm_field_int(pslverr, UVM_ALL_ON)
   `uvm_object_utils_end
 
@@ -93,8 +95,8 @@ class apb_master_seq_item extends uvm_sequence_item;
   // uvm_object::convert2string(), which is declared virtual. Without "virtual"
   // here, polymorphic calls would call the base class version instead.
   virtual function string convert2string();
-    return $sformatf("addr=0x%03h wdata=0x%02h read=%0b | paddr=0x%03h pwdata=0x%02h pwrite=%0b rdata=0x%02h psel1=%0b psel2=%0b pslverr=%0b",
-                     addr, wdata, read, paddr, pwdata, pwrite, rdata, psel1, psel2, pslverr);
+    return $sformatf("addr=0x%03h wdata=0x%02h read=%0b | paddr=0x%03h pwdata=0x%02h pwrite=%0b rdata=0x%02h psel1=%0b psel2=%0b penable=%0b pslverr=%0b",
+                     addr, wdata, read, paddr, pwdata, pwrite, rdata, psel1, psel2, penable, pslverr);
   endfunction
 
 endclass

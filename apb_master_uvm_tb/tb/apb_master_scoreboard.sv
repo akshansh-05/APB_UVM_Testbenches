@@ -70,10 +70,11 @@ class apb_master_scoreboard extends uvm_scoreboard;
   // a transaction via its analysis port. The "item" parameter contains the
   // observed APB bus values captured by the monitor.
   //
-  // We perform 3 checks on each transaction:
+  // We perform 4 checks on each transaction:
   //   CHECK 1: PSEL routing (is the correct slave selected?)
   //   CHECK 2: PSLVERR status (should be 0 for valid transfers)
-  //   CHECK 3: Read data verification (for read transactions only)
+  //   CHECK 3: PENABLE status (should be 1 during completed transfers)
+  //   CHECK 4: Read data verification (for read transactions only)
   function void write(apb_master_seq_item item);
 
     bit [7:0] expected_rdata;    // What we expect the read data to be
@@ -121,7 +122,25 @@ class apb_master_scoreboard extends uvm_scoreboard;
     end
 
     // ===============================================================
-    // CHECK 3: Read Data Verification
+    // CHECK 3: PENABLE should be 1 during a completed transfer
+    // ===============================================================
+    // The monitor only captures transactions when PENABLE=1 && PREADY=1,
+    // so PENABLE should always be 1 here. This is a sanity check that
+    // the DUT correctly asserted PENABLE during the ACCESS phase.
+    if (item.penable !== 1) begin
+      num_errors++;
+      `uvm_error("SCB", $sformatf(
+        "PENABLE FAIL: paddr=0x%03h penable=%0b (expected 1 during ACCESS phase)",
+        item.paddr, item.penable))
+    end
+    else begin
+      num_passes++;
+      `uvm_info("SCB", $sformatf(
+        "PENABLE PASS: paddr=0x%03h penable=1", item.paddr), UVM_MEDIUM)
+    end
+
+    // ===============================================================
+    // CHECK 4: Read Data Verification
     // ===============================================================
     // For reads (PWRITE=0), the slave responder in tb_top drives:
     //   PRDATA = PADDR[7:0] XOR 0xA5

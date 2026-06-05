@@ -81,6 +81,7 @@ class apb_master_monitor extends uvm_monitor;
         item.pwrite  = vif.monitor_cb.PWRITE;             // Write/read direction
         item.psel1   = vif.monitor_cb.PSEL1;              // Slave 1 selected?
         item.psel2   = vif.monitor_cb.PSEL2;              // Slave 2 selected?
+        item.penable = vif.monitor_cb.PENABLE;            // ACCESS phase active?
         item.pslverr = vif.monitor_cb.PSLVERR;            // Any slave error?
         item.rdata   = vif.monitor_cb.apb_read_data_out;  // Read data from DUT
 
