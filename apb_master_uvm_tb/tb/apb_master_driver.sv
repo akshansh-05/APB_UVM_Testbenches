@@ -126,12 +126,11 @@ class apb_master_driver extends uvm_driver #(apb_master_seq_item);
       item.pslverr = vif.driver_cb.PSLVERR;             // Grab error flag
 
       // ── Step 5: Idle gap ──
-      // Deassert transfer for 1 cycle so the DUT FSM returns to IDLE
-      // before the next transaction. Without this gap, the DUT might
-      // interpret consecutive transfers incorrectly.
-      @(vif.driver_cb);
+      // Deassert transfer IMMEDIATELY after PREADY detection.
+      // If we wait an extra cycle, the DUT sees transfer=1 in ENABLE
+      // and starts a second back-to-back transfer with the same data.
       vif.driver_cb.transfer <= 0;  // Release transfer request
-      @(vif.driver_cb);             // Wait one more cycle in IDLE state
+      @(vif.driver_cb);             // Wait one cycle for DUT to return to IDLE
 
       // ── Step 6: Signal completion ──
       // Tell the sequencer that we're done with this item.

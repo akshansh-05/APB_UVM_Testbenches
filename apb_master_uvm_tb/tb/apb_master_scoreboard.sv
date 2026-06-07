@@ -93,13 +93,13 @@ class apb_master_scoreboard extends uvm_scoreboard;
     if (item.psel1 !== expected_psel1 || item.psel2 !== expected_psel2) begin
       num_errors++;
       `uvm_error("SCB", $sformatf(
-        "PSEL ROUTING FAIL: paddr=0x%03h → expected PSEL1=%0b PSEL2=%0b, got PSEL1=%0b PSEL2=%0b",
+        "PSEL ROUTING FAIL: paddr=0x%03h -> expected PSEL1=%0b PSEL2=%0b, got PSEL1=%0b PSEL2=%0b",
         item.paddr, expected_psel1, expected_psel2, item.psel1, item.psel2))
     end
     else begin
       num_passes++;
       `uvm_info("SCB", $sformatf(
-        "PSEL ROUTING PASS: paddr=0x%03h → PSEL1=%0b PSEL2=%0b",
+        "PSEL ROUTING PASS: paddr=0x%03h -> PSEL1=%0b PSEL2=%0b",
         item.paddr, item.psel1, item.psel2), UVM_MEDIUM)
     end
 
