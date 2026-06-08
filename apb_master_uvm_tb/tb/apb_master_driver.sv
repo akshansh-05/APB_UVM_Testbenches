@@ -56,36 +56,59 @@ class apb_master_driver extends uvm_driver #(apb_master_seq_item);
       `uvm_fatal("DRV", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
-  // ---- Run Phase: Main driving loop ----
-  // run_phase is a task (not function) because it runs for the entire simulation.
-  // It executes concurrently with the monitor's run_phase.
+  // =========================================================================
+  // UVM RUN PHASE & DRIVING LOOP
+  // =========================================================================
+  // `run_phase` is the only phase that is defined as a `task` (can consume time)
+  // rather than a `function` (must execute in zero time). It starts automatically
+  // and executes concurrently across all components.
+  //
+  // Inside the driver, this task implements a loop that continuously:
+  //   1. Waits for a transaction from the sequencer (`get_next_item`).
+  //   2. Translates the high-level transaction object into physical pin actions.
+  //   3. Signals back when done (`item_done`).
+  // =========================================================================
   task run_phase(uvm_phase phase);
 
-    // Wait for the first clock edge before driving clocking-block outputs.
-    // Xcelium requires at least one clock edge before you can drive a
-    // clocking block output, otherwise it throws a runtime error.
+    // Synchronize to the clocking block's active clock edge first.
+    // NOTE: Many SystemVerilog simulators (like Xcelium) require at least one clocking 
+    // block event before you can drive any clocking block output, otherwise you 
+    // will get a runtime simulation error.
     @(vif.driver_cb);
 
-    // Initialize all system-side signals to idle state (no transfer requested).
-    // Using NBA (<=) because we're driving through a clocking block.
-    vif.driver_cb.transfer        <= 0;  // No transfer active
+    // =========================================================================
+    // SYSTEMVERILOG TIP: Non-Blocking Assignments (<=) in Clocking Blocks
+    // =========================================================================
+    // When driving signals through an interface clocking block (e.g. vif.driver_cb.signal),
+    // you MUST use non-blocking assignments (`<=`).
+    //
+    // Why?
+    //   - Clocking blocks are designed to model cycle-accurate synchronous hardware.
+    //   - Using `<=` schedules the value change to happen after the clock edge 
+    //     (shifted by the output skew defined in the interface, e.g. #1ns).
+    //   - If you use blocking assignments (`=`), you bypass the clocking block's
+    //     skew logic and risk causing zero-delay delta race conditions where
+    //     the design samples the new value on the exact same clock edge.
+    // =========================================================================
+    vif.driver_cb.transfer        <= 0;  // Initialize to IDLE (no transfer requested)
     vif.driver_cb.READ_WRITE      <= 0;  // Default: write mode
     vif.driver_cb.apb_write_paddr <= 0;  // Clear write address
     vif.driver_cb.apb_read_paddr  <= 0;  // Clear read address
     vif.driver_cb.apb_write_data  <= 0;  // Clear write data
 
-    // Main driving loop — runs forever until simulation ends.
-    // Each iteration processes one transaction from the sequencer.
+    // Forever loop representing the lifetime of the driver.
+    // It will be terminated automatically when UVM drops all objections and kills run_phase.
     forever begin
-      apb_master_seq_item item;     // Local handle for the current transaction
-      int timeout_cnt;              // Counter to detect stuck DUT
+      apb_master_seq_item item;     // Local reference to the transaction being processed
+      int timeout_cnt;              // Safety counter to detect stuck RTL/handshake
 
       // ── Step 1: Get next transaction from sequencer ──
-      // This BLOCKS until the sequencer has an item ready.
-      // The item comes from a sequence's start_item()/finish_item() call.
+      // This is a blocking TLM call. It tells the sequencer "I'm ready for work" 
+      // and suspends execution of this task until a sequence has an item ready.
       seq_item_port.get_next_item(item);
 
-      // Log what we're about to drive (visible at UVM_MEDIUM verbosity)
+      // Log the transaction. verbosity UVM_MEDIUM means it prints by default,
+      // but can be hidden if we change verbosity to UVM_LOW.
       `uvm_info("DRV", $sformatf("Driving: addr=0x%03h wdata=0x%02h read=%0b",
                                   item.addr, item.wdata, item.read), UVM_MEDIUM)
 

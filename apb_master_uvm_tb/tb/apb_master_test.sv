@@ -45,15 +45,28 @@ class apb_master_test extends uvm_test;
     env = apb_master_env::type_id::create("env", this);
   endfunction
 
-  // ---- Run Phase ----
-  // This is where the actual test stimulus is applied.
-  // It runs as a task (has simulation time) concurrently with
-  // all other run_phase tasks (driver, monitor, etc.)
+  // =========================================================================
+  // UVM RUN PHASE: Stimulus Application & Simulation Control
+  // =========================================================================
+  // The run_phase task is where the test executes.
+  //
+  // THE UVM OBJECTION MECHANISM:
+  //   In UVM, simulation is time-consuming only if there are active "objections".
+  //   If no objections are raised, the simulation terminates at time 0.
+  //
+  //   - `phase.raise_objection(this)`: Registers a request to keep the simulation
+  //     running. It acts as a "keep alive" vote.
+  //   - `phase.drop_objection(this)`: Relinquishes the request. When the count
+  //     of all active objections across the entire testbench drops to zero,
+  //     UVM automatically ends the `run_phase` and stops simulation time.
+  //
+  //   - Best Practice: Always raise and drop objections at the highest level
+  //     (inside the Test or inside the Top Sequences). Avoid raising/dropping
+  //     them in low-level drivers or monitors, as they should be reactive.
+  // =========================================================================
   task run_phase(uvm_phase phase);
 
-    // Raise objection: prevent UVM from ending the simulation.
-    // Without this, UVM would end immediately because no one
-    // is requesting simulation time.
+    // Raise objection to start simulation and prevent early termination.
     phase.raise_objection(this);
 
     `uvm_info("TEST", "================================================", UVM_LOW)
@@ -65,26 +78,31 @@ class apb_master_test extends uvm_test;
     // ensure the DUT is fully out of reset before sending transactions.
     #100;
 
-    // ── Run the write sequence ──
-    // Create the sequence, then start it on the agent's sequencer.
-    // seq.start() BLOCKS until the sequence's body() task completes
-    // (i.e., all 5 write transactions have been driven and completed).
+    // ─────────────────────────────────────────────────────────────────────────
+    // SEQUENCE INSTANTIATION & EXECUTION
+    // ─────────────────────────────────────────────────────────────────────────
+    // We instantiate the sequence using the UVM factory, then run it.
+    // `seq.start(...)` is a blocking call:
+    //   1. It registers the sequence on the agent's sequencer (`env.agent.sqr`).
+    //   2. It executes the sequence's `body()` task.
+    //   3. It suspends execution of this run_phase task until `body()` completes.
+    // ─────────────────────────────────────────────────────────────────────────
     begin
-      apb_master_write_seq seq;
-      seq = apb_master_write_seq::type_id::create("seq");
+      apb_master_write_read_seq seq;
+      seq = apb_master_write_read_seq::type_id::create("seq");
       seq.start(env.agent.sqr);   // Run sequence on the agent's sequencer
     end
 
-    // Wait a bit after the last transaction for any final
-    // monitoring/scoring to complete.
+    // Wait a brief period after sequence completion for any final bus cycles,
+    // monitor sampling, or scoreboard checks to settle.
     #100;
 
     `uvm_info("TEST", "================================================", UVM_LOW)
     `uvm_info("TEST", "  APB Master Bridge UVM Test Complete", UVM_LOW)
     `uvm_info("TEST", "================================================", UVM_LOW)
 
-    // Drop objection: tell UVM we're done.
-    // UVM will now proceed to the extract, check, and report phases.
+    // Drop objection: we are done generating stimulus.
+    // If no other objections are active, UVM will shut down the run_phase.
     phase.drop_objection(this);
   endtask
 

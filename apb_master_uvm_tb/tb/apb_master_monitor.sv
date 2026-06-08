@@ -19,21 +19,32 @@
 //   → Scoreboard receives and checks
 // ============================================================================
 
-// Extends uvm_monitor, which is a base class for passive observation components.
-// Unlike uvm_driver, monitors should never drive signals.
+// =========================================================================
+// UVM CONCEPT: Passive Monitor & TLM Analysis Ports
+// =========================================================================
+// A monitor is a passive verification component. It is strictly forbidden
+// from driving any signals on the interface. Its sole purpose is to observe
+// pin activity, reconstruct high-level transaction packets (seq_items), and
+// broadcast them to other components.
+//
+// To broadcast these packets without creating hard dependencies, UVM uses
+// Transaction-Level Modeling (TLM) Analysis Ports:
+//   - `uvm_analysis_port#(T)` implements a publisher-subscriber pattern.
+//   - When the monitor calls `ap.write(item)`, it broadcasts the item to
+//     *every* subscriber connected to it (e.g. scoreboard, coverage collector).
+//   - If nothing is connected to it, the `write()` call is a safe no-op.
+//   - This decouples the monitor entirely; it doesn't need to know who is
+//     listening to its data, making it highly reusable.
+// =========================================================================
 class apb_master_monitor extends uvm_monitor;
 
-  // Register with UVM factory for factory creation and overrides.
+  // Register with UVM factory.
   `uvm_component_utils(apb_master_monitor)
 
-  // Handle to the virtual interface (for reading APB bus signals).
+  // Handle to the virtual interface.
   virtual apb_master_if vif;
 
-  // Analysis port: a broadcast mechanism for sending observed transactions
-  // to any connected subscriber (typically the scoreboard).
-  // "analysis_port" is a one-to-many connection — multiple subscribers
-  // can connect to it simultaneously. When we call ap.write(item),
-  // all connected subscribers receive a copy of the item.
+  // Broadcast port (TLM Analysis Port) to publish reconstructed transaction items.
   uvm_analysis_port #(apb_master_seq_item) ap;
 
   // ---- Constructor ----

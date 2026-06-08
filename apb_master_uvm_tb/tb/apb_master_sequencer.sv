@@ -28,8 +28,30 @@
 //     - apb_master_test.sv:  calls "seq.start(env.agent.sqr);"
 // ============================================================================
 
-// "typedef" creates a new type name "apb_master_sequencer" that is
-// identical to "uvm_sequencer #(apb_master_seq_item)".
-// The #(apb_master_seq_item) parameterization tells the sequencer
-// what type of transaction items it will handle.
+// =========================================================================
+// UVM CONCEPT: The Sequencer & The Driver-Sequencer Pull Model
+// =========================================================================
+// The sequencer acts as a mediator and buffer between the active stimulus
+// generator (the sequence) and the physical pin driver (the driver).
+//
+// The communication operates on a PULL model (initiated by the driver):
+//   1. The driver calls `seq_item_port.get_next_item(req)`.
+//   2. This call goes through the TLM export/port link to the sequencer.
+//   3. The sequencer wakes up the running sequence's body.
+//   4. The sequence generates a transaction item and sends it back.
+//   5. Once the driver finishes driving the item, it calls `seq_item_port.item_done()`.
+//   6. This handshakes back to the sequencer, unblocking the sequence.
+//
+// WHY TYPEDEF?
+// UVM's `uvm_sequencer#(REQ, RSP)` is a fully implemented class that contains
+// all the standard FIFOs, export ports, and complex arbitration logic (for
+// cases where multiple sequences run concurrently).
+//
+// If you do not need to add custom variables, virtual interfaces, or write
+// custom arbitration logic inside the sequencer, you do not need to extend
+// the class. A simple `typedef` creates a type alias of the base class
+// parameterized with your sequence item. This is clean and standard UVM practice.
+// =========================================================================
+
+// Parameterize the base sequencer with our transaction type.
 typedef uvm_sequencer #(apb_master_seq_item) apb_master_sequencer;

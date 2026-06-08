@@ -28,23 +28,34 @@
 //   broadcasts a transaction via ap.write(item).
 // ============================================================================
 
-// Extends uvm_scoreboard, which is a base class for checking components.
+// =========================================================================
+// UVM CONCEPT: Scoreboard & TLM Analysis Implementation (uvm_analysis_imp)
+// =========================================================================
+// The scoreboard is the verification checker component. It receives
+// transaction records from the monitor and compares them against expected
+// results or reference models.
+//
+// To receive broadcasts from the monitor, the scoreboard instantiates a
+// TLM Analysis Implementation port (`uvm_analysis_imp`).
+//
+// Template parameters:
+//   1. apb_master_seq_item: The type of transaction data packet we receive.
+//   2. apb_master_scoreboard: The class type of the component that implements
+//      the write callback. The port requires a pointer to a component that
+//      has a function named `write(T item)`.
+//
+// During `connect_phase` in the env, we connect the monitor's port to this:
+//   `agent.mon.ap.connect(scoreboard.analysis_export)`
+//
+// Under the hood, whenever the monitor calls `ap.write(item)`, this connection
+// routes the call to the scoreboard's `write(item)` function automatically.
+// =========================================================================
 class apb_master_scoreboard extends uvm_scoreboard;
 
   // Register with UVM factory.
   `uvm_component_utils(apb_master_scoreboard)
 
-  // ---- Analysis Implementation Port ----
-  // uvm_analysis_imp is the RECEIVING end of an analysis connection.
-  // It implements a write() function that gets called when the monitor
-  // broadcasts a transaction.
-  //
-  // Template parameters:
-  //   apb_master_seq_item    → the transaction type we receive
-  //   apb_master_scoreboard  → the class that implements write()
-  //
-  // This port is connected to the monitor's analysis port in apb_master_env.sv:
-  //   agent.mon.ap.connect(scoreboard.analysis_export)
+  // TLM receiving port. When connected, calls `this.write(item)`.
   uvm_analysis_imp #(apb_master_seq_item, apb_master_scoreboard) analysis_export;
 
   // ---- Counters for tracking test results ----
@@ -52,6 +63,9 @@ class apb_master_scoreboard extends uvm_scoreboard;
   int num_reads      = 0;   // Number of read transactions observed
   int num_passes     = 0;   // Number of checks that passed
   int num_errors     = 0;   // Number of checks that failed
+
+  // Shared memory model
+  apb_memory_model mem_model;
 
   // ---- Constructor ----
   function new(string name = "apb_master_scoreboard", uvm_component parent);
@@ -63,6 +77,9 @@ class apb_master_scoreboard extends uvm_scoreboard;
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     analysis_export = new("analysis_export", this);
+    if (!uvm_config_db #(apb_memory_model)::get(this, "", "mem_model", mem_model)) begin
+      `uvm_warning("SCB", "Could not get shared memory model 'mem_model' from config_db")
+    end
   endfunction
 
   // ---- Write Method ----
@@ -151,7 +168,15 @@ class apb_master_scoreboard extends uvm_scoreboard;
     if (!item.pwrite) begin
       // This is a READ transaction (PWRITE=0 means read in APB)
       num_reads++;
-      expected_rdata = item.paddr[7:0] ^ 8'hA5;  // Calculate expected read data
+
+      if (mem_model != null && mem_model.read_ram(item.paddr, expected_rdata)) begin
+        `uvm_info("SCB", $sformatf("READ check using Memory Model for address 0x%03h", item.paddr), UVM_HIGH)
+      end
+      else begin
+        // Fallback to default XOR pattern
+        expected_rdata = item.paddr[7:0] ^ 8'hA5;
+        `uvm_info("SCB", $sformatf("READ check using default fallback pattern for address 0x%03h", item.paddr), UVM_HIGH)
+      end
 
       if (item.rdata === expected_rdata) begin
         num_passes++;

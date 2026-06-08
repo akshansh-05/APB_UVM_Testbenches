@@ -33,12 +33,14 @@ package apb_master_pkg;
 
   `include "apb_master_seq_item.sv"     // 1. Transaction item (no dependencies)
   `include "apb_master_sequencer.sv"    // 2. Sequencer typedef (depends on seq_item)
-  `include "apb_master_driver.sv"       // 3. Driver (depends on seq_item)
-  `include "apb_master_monitor.sv"      // 4. Monitor (depends on seq_item)
-  `include "apb_master_agent.sv"        // 5. Agent (depends on driver, monitor, sequencer)
-  `include "apb_master_scoreboard.sv"   // 6. Scoreboard (depends on seq_item)
-  `include "apb_master_env.sv"          // 7. Environment (depends on agent, scoreboard)
-  `include "apb_master_sequences.sv"    // 8. Sequences (depends on seq_item, sequencer)
-  `include "apb_master_test.sv"         // 9. Test (depends on env, sequences)
+  `include "apb_memory_model.sv"        // 3. Shared Memory Model
+  `include "apb_slave_driver.sv"        // 4. Standalone Slave Driver
+  `include "apb_master_driver.sv"       // 5. Driver (depends on seq_item)
+  `include "apb_master_monitor.sv"      // 6. Monitor (depends on seq_item)
+  `include "apb_master_agent.sv"        // 7. Agent (depends on driver, monitor, sequencer)
+  `include "apb_master_scoreboard.sv"   // 8. Scoreboard (depends on seq_item)
+  `include "apb_master_env.sv"          // 9. Environment (depends on agent, scoreboard, slave_driver)
+  `include "apb_master_sequences.sv"    // 10. Sequences (depends on seq_item, sequencer)
+  `include "apb_master_test.sv"         // 11. Test (depends on env, sequences)
 
 endpackage

@@ -18,11 +18,21 @@
 //   The Scoreboard then uses the monitored fields to check correctness.
 // ============================================================================
 
-// The class extends uvm_sequence_item, which is the base class for all
-// transaction objects in UVM. It provides built-in support for:
-//   - Randomization (via SystemVerilog `rand`)
-//   - Copy, compare, print, pack/unpack (via field macros)
-//   - Factory creation (via `uvm_object_utils)
+// =========================================================================
+// UVM CONCEPT: uvm_sequence_item vs. uvm_component
+// =========================================================================
+// In UVM, there are two primary base classes:
+//   1. uvm_component: Static testbench components (drivers, monitors, envs)
+//      that are created once at the beginning of the simulation (in build_phase),
+//      remain in memory, and execute phases (build, connect, run, etc.).
+//   2. uvm_object: Dynamic, transient objects (transactions, configurations)
+//      that are created dynamically during simulation, used, and then garbage
+//      collected by the SystemVerilog runtime.
+//
+// `uvm_sequence_item` extends `uvm_object`. It does NOT have phases because
+// it is a data container, not a structural component. It represents a single
+// packet or transaction (e.g. an APB read/write bus transaction).
+// =========================================================================
 class apb_master_seq_item extends uvm_sequence_item;
 
   // ===================== DRIVER FIELDS =====================
@@ -56,17 +66,30 @@ class apb_master_seq_item extends uvm_sequence_item;
   // we stay within the valid address space. Both slaves have 256 addresses each.
   constraint c_valid_addr { addr inside {[0:511]}; }
 
-  // ===================== UVM FACTORY REGISTRATION =====================
-  // `uvm_object_utils_begin/end registers this class with the UVM factory
-  // AND declares field automation for each field.
+  // =========================================================================
+  // UVM FACTORY & FIELD MACROS
+  // =========================================================================
+  // `uvm_object_utils_begin(apb_master_seq_item) and `uvm_object_utils_end
+  // register the class with the UVM Factory and open a block for field automation.
   //
-  // The factory allows creating objects by type name (useful for overrides).
-  // Field automation (`uvm_field_int) gives us automatic:
-  //   - print()    → prints all fields in a table
-  //   - copy()     → deep-copies all fields
-  //   - compare()  → compares all fields between two objects
-  //   - pack/unpack → serialization
-  // UVM_ALL_ON enables all these operations for each field.
+  // Factory Registration:
+  //   Enables type override capability (e.g. replacing apb_master_seq_item with
+  //   an error_injecting_seq_item at run-time without changing component source code).
+  //
+  // Field Automation Macros (`uvm_field_int):
+  //   UVM provides macros like `uvm_field_int`, `uvm_field_string`, etc.
+  //   These automatically implement several core methods of `uvm_object`:
+  //     - copy(): Performs a deep copy of all registered fields.
+  //     - compare(): Performs field-by-field comparisons between two transactions.
+  //     - print()/sprint(): Formats and prints all fields as a table or string.
+  //     - pack()/unpack(): Serializes fields into a bit array (useful for network
+  //       or physical protocols) and deserializes them back.
+  //
+  //   `UVM_ALL_ON` tells the macro to enable all these features for this field.
+  //   While field macros make code very concise, they can add simulation overhead.
+  //   For complex systems, verification engineers sometimes write custom copy/compare
+  //   methods for maximum speed. For most testbenches, the macros are preferred.
+  // =========================================================================
   `uvm_object_utils_begin(apb_master_seq_item)
     `uvm_field_int(addr,    UVM_ALL_ON)
     `uvm_field_int(wdata,   UVM_ALL_ON)

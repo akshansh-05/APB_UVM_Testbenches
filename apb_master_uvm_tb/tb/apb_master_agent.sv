@@ -43,28 +43,49 @@ class apb_master_agent extends uvm_agent;
     super.new(name, parent);
   endfunction
 
-  // ---- Build Phase: Create sub-components ----
-  // build_phase runs top-down in the UVM hierarchy.
-  // The agent creates its children here.
+  // =========================================================================
+  // UVM PHASE: build_phase (Top-Down Execution)
+  // =========================================================================
+  // `build_phase` is used to instantiate sub-components. In UVM, it runs
+  // TOP-DOWN through the component hierarchy:
+  //   1. test.build_phase creates env
+  //   2. env.build_phase creates agent
+  //   3. agent.build_phase creates driver, monitor, and sequencer.
+  //
+  // This top-down flow is critical because parent components can configure
+  // their child components (using `uvm_config_db`) before those children are built.
+  //
+  // ACTIVE vs. PASSIVE AGENTS:
+  //   - Active: Generates stimulus. Creates sequencer + driver + monitor.
+  //   - Passive: Observes bus. Creates only the monitor.
+  //   - `get_is_active()` queries the UVM agent's built-in `is_active` variable.
+  //     This can be set via `uvm_config_db` (e.g. from the test) to dynamically
+  //     turn driving on/off without changing code.
+  // =========================================================================
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
 
-    // Monitor is ALWAYS created — we always want to observe.
+    // The monitor is passive, so it is always created (both active & passive modes).
     mon = apb_master_monitor::type_id::create("mon", this);
 
-    // Driver and Sequencer are only created in ACTIVE mode.
-    // In PASSIVE mode, the agent only monitors (no driving).
+    // Instantiate driver and sequencer only if agent is active.
     if (get_is_active() == UVM_ACTIVE) begin
       drv = apb_master_driver::type_id::create("drv", this);
       sqr = apb_master_sequencer::type_id::create("sqr", this);
     end
   endfunction
 
-  // ---- Connect Phase: Wire driver to sequencer ----
-  // connect_phase runs bottom-up. We connect the TLM ports here.
-  // The driver's seq_item_port is connected to the sequencer's seq_item_export.
-  // This creates the communication channel:
-  //   Sequence → Sequencer (seq_item_export) → Driver (seq_item_port)
+  // =========================================================================
+  // UVM PHASE: connect_phase (Bottom-Up Execution)
+  // =========================================================================
+  // `connect_phase` runs after all components have been instantiated.
+  // Unlike build_phase, it runs BOTTOM-UP.
+  //
+  // Here, we connect the TLM ports of the sub-components.
+  // We connect the driver's `seq_item_port` (initiator) to the sequencer's
+  // `seq_item_export` (target). This establishes the pull communication channel
+  // through which the driver requests transactions from the sequencer.
+  // =========================================================================
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
     if (get_is_active() == UVM_ACTIVE) begin

@@ -92,15 +92,12 @@ module tb_top;
   //    This means zero wait states (fastest possible slave).
   //
   //  PRDATA = PADDR[7:0] ^ 8'hA5:
-  //    For read transactions, the slave returns data based on the address.
   //    XOR with 0xA5 creates a predictable, non-trivial pattern:
   //      addr=0x00 → PRDATA=0xA5
   //      addr=0x10 → PRDATA=0xB5
   //      addr=0xFF → PRDATA=0x5A
-  //    The scoreboard knows this formula and checks apb_read_data_out
-  //    against it to verify the master correctly passes read data through.
-  assign apb_vif.PREADY = apb_vif.PENABLE;
-  assign apb_vif.PRDATA = apb_vif.PADDR[7:0] ^ 8'hA5;
+  //  // The slave response signals (PREADY, PRDATA) are driven dynamically
+  //  // by the UVM Slave Driver (apb_slave_driver) through the virtual interface.
 
   // ---- Instantiate the DUT (master_bridge) ----
   // Connect the DUT's ports to the interface signals.
@@ -133,14 +130,31 @@ module tb_top;
   );
 
   // ---- Store Interface in Config DB and Start Test ----
-  initial begin
-
-    // Store the virtual interface handle in UVM's config_db.
-    // This is how UVM classes get access to the interface signals:
-    //   - "null" → accessible from any component in the hierarchy
-    //   - "*"    → matches all components (wildcard)
-    //   - "vif"  → the key name (must match what driver/monitor use in ::get)
-    //   - apb_vif → the actual interface instance handle
+    // =========================================================================
+    // THE HARDWARE-SOFTWARE BRIDGE: uvm_config_db#(T)::set
+    // =========================================================================
+    // The class-based UVM environment is dynamic (objects are created and
+    // destroyed on the fly), whereas the HDL design is static. To connect the
+    // two, we use UVM's Configuration Database (uvm_config_db).
+    //
+    // uvm_config_db#(virtual apb_master_if)::set(...) stores the handle to our
+    // physical interface instance (apb_vif) inside the database.
+    //
+    // Parameters Explained:
+    //   1. cntxt (context): uvm_component parent context.
+    //      - We pass `null` here because this initial block runs inside a static
+    //        Verilog module (`tb_top`), which is NOT a UVM component class.
+    //        Passing `null` makes this entry global or anchored to the root.
+    //   2. inst_name (instance name): Path string to target components.
+    //      - We pass `"*"` (wildcard) which means *all* components in the testbench
+    //        hierarchy will have permission to read this entry. If we wanted to
+    //        restrict it, we could pass `"uvm_test_top.env.agent.drv"`.
+    //   3. field_name: String lookup key.
+    //      - We pass `"vif"`. Any component attempting to retrieve this interface
+    //        must query the database with this exact string name.
+    //   4. value: The actual data or handle being stored.
+    //      - We pass `apb_vif`, which is the physical interface instance.
+    // =========================================================================
     uvm_config_db #(virtual apb_master_if)::set(null, "*", "vif", apb_vif);
 
     // Enable VCD waveform dumping for debugging.
@@ -150,10 +164,20 @@ module tb_top;
     $dumpfile("apb_master_tb.vcd");
     $dumpvars(0, tb_top);
 
-    // Start the UVM test.
-    // run_test() reads +UVM_TESTNAME from the command line (e.g., "apb_master_test"),
-    // creates that test class via the factory, and executes all UVM phases:
-    //   build → connect → run → extract → check → report → final
+    // =========================================================================
+    // STARTING THE UVM ENGINE: run_test()
+    // =========================================================================
+    // run_test() is a global UVM task that does the following:
+    //   1. Checks for the "+UVM_TESTNAME=<name>" argument on the simulator's
+    //      command line (e.g. +UVM_TESTNAME=apb_master_test).
+    //   2. Queries the UVM Factory to instantiate the test class matching that name.
+    //   3. Starts the execution of UVM Phases in order:
+    //      - TOP-DOWN: build_phase (instantiate components)
+    //      - BOTTOM-UP: connect_phase (wire TLM ports)
+    //      - BOTTOM-UP: end_of_elaboration_phase
+    //      - PARALLEL: run_phase (time-consuming simulation tasks)
+    //      - BOTTOM-UP: extract_phase, check_phase, report_phase, final_phase
+    // =========================================================================
     run_test();
   end
 

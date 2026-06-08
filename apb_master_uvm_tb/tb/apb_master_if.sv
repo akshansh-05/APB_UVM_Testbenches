@@ -114,12 +114,28 @@ interface apb_master_if(input logic PCLK, input logic PRESETn);
     input PSLVERR;
   endclocking
 
+  // ---- Clocking Block for Slave Driver ----
+  // The slave driver reads APB signals from the master and drives PREADY/PRDATA
+  clocking slave_cb @(posedge PCLK);
+    default input #1 output #1;
+    input  PSEL1;
+    input  PSEL2;
+    input  PENABLE;
+    input  PADDR;
+    input  PWRITE;
+    input  PWDATA;
+    output PREADY;
+    output PRDATA;
+  endclocking
+
   // ---- Modports ----
   // Modports restrict which signals/clocking blocks a component can access.
   // "driver" modport  → can use driver_cb (drive system signals, read APB signals)
   // "monitor" modport → can use monitor_cb (read-only access to all signals)
+  // "slave_driver" modport → can use slave_cb (drive PREADY/PRDATA, read APB signals)
   // Both get direct access to PCLK and PRESETn for reset handling.
   modport driver  (clocking driver_cb,  input PCLK, input PRESETn);
   modport monitor (clocking monitor_cb, input PCLK, input PRESETn);
+  modport slave_driver (clocking slave_cb, input PCLK, input PRESETn);
 
 endinterface
