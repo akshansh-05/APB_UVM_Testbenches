@@ -22,7 +22,8 @@ interface apb_if (
   logic       PSLVERR;
 
   clocking master_cb @(posedge PCLK);
-    default input #1ns output #1ns;        // Establishes 1ns setup and hold times for signals
+    // 1ns setup and hold skews prevent race conditions between the DUT and the testbench
+    default input #1ns output #1ns;
     output transfer;
     output READ_WRITE;
     output apb_write_paddr;

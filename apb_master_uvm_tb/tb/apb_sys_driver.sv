@@ -31,6 +31,7 @@ class apb_sys_driver extends uvm_driver #(apb_seq_item);
 
       `uvm_info("DRV", $sformatf("Driving: addr=0x%03h wdata=0x%02h read=%0b", item.addr, item.wdata, item.read), UVM_MEDIUM)
 
+      // Initiate transaction on the interface and wait for the slave to complete the handshake via PREADY
       vif.master_cb.transfer   <= 1;
       vif.master_cb.READ_WRITE <= item.read;
       if (item.read) begin
@@ -41,7 +42,7 @@ class apb_sys_driver extends uvm_driver #(apb_seq_item);
         vif.master_cb.apb_write_data  <= item.wdata;
       end
 
-      timeout_cnt = 0;                                   // Resets timeout safety counter
+      timeout_cnt = 0;
       do begin
         @(vif.master_cb);
         timeout_cnt++;

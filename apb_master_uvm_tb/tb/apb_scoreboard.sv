@@ -1,3 +1,5 @@
+// Suffix declarations to implement multiple analysis ports of the same type within this scoreboard.
+// One processes expected transfers from the system monitor, the other actual transfers from the bus monitor.
 `uvm_analysis_imp_decl(_expected)
 `uvm_analysis_imp_decl(_actual)
 
@@ -5,7 +7,7 @@ class apb_scoreboard extends uvm_scoreboard;
 
   `uvm_component_utils(apb_scoreboard)
 
-  uvm_analysis_imp_expected #(apb_seq_item, apb_scoreboard) exp_port; // Analysis implementation port for system requests
+  uvm_analysis_imp_expected #(apb_seq_item, apb_scoreboard) exp_port;
   uvm_analysis_imp_actual   #(apb_seq_item, apb_scoreboard) act_port;
 
   int num_writes     = 0;
@@ -75,8 +77,9 @@ class apb_scoreboard extends uvm_scoreboard;
       end
     end
 
-    expected_psel1 = ~item.paddr[8];                     // Slave 1 selected when address bit 8 is low
-    expected_psel2 =  item.paddr[8];                     // Slave 2 selected when address bit 8 is high
+    // Address bit 8 acts as the chip select: 0 routes to Slave 1, 1 routes to Slave 2
+    expected_psel1 = ~item.paddr[8];
+    expected_psel2 =  item.paddr[8];
     if (item.psel1 !== expected_psel1 || item.psel2 !== expected_psel2) begin
       num_errors++;
       `uvm_error("SCB", $sformatf("SLAVE SELECT MISMATCH: Addr=0x%03h -> expected PSEL1=%0b PSEL2=%0b, got PSEL1=%0b PSEL2=%0b", item.paddr, expected_psel1, expected_psel2, item.psel1, item.psel2))
@@ -87,11 +90,12 @@ class apb_scoreboard extends uvm_scoreboard;
 
     if (!item.pwrite) begin
       num_reads++;
+      // If address was written previously, expect that data. Otherwise, calculate the slave's fallback read response (lower 8 bits of address XORed with 0xA5)
       if (ref_mem.exists(item.paddr)) begin
-        expected_rdata = ref_mem[item.paddr];            // Retrieves expected byte from reference memory
+        expected_rdata = ref_mem[item.paddr];
       end
-      else begin                                         // Address never written before
-        expected_rdata = item.paddr[7:0] ^ 8'hA5;        // Recomputes expected fallback pattern matching the slave
+      else begin
+        expected_rdata = item.paddr[7:0] ^ 8'hA5;
       end
 
       if (item.rdata !== expected_rdata) begin

@@ -19,7 +19,7 @@ class apb_monitor extends uvm_monitor;
 
   task run_phase(uvm_phase phase);
     forever begin
-
+      // Sample the bus on each clock. A valid transaction is completed only when PSEL, PENABLE, and PREADY are all asserted.
       @(vif.monitor_cb);
       if (vif.monitor_cb.PSEL && vif.monitor_cb.PENABLE) begin
 

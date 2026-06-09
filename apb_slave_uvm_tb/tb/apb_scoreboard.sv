@@ -28,6 +28,7 @@ class apb_scoreboard extends uvm_scoreboard;
 
   function void write(apb_seq_item item);
 
+    // Update the reference model on writes, and compare read data against reference memory on reads
     if (item.write) begin
       ref_mem[item.addr] = item.wdata;
       num_writes++;

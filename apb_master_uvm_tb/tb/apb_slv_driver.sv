@@ -26,6 +26,8 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
     forever begin                                        // Infinite reactive responder loop
       @(vif.slave_cb);
 
+      // Reactive responder logic:
+      // Setup phase: PSEL is high and PENABLE is low. Prepare read data if PWRITE is low, and assert PREADY.
       if (vif.slave_cb.PSEL1 || vif.slave_cb.PSEL2) begin
         if (!vif.slave_cb.PENABLE) begin
           vif.slave_cb.PREADY <= 1'b1;
@@ -35,12 +37,13 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
               `uvm_info("SLV_DRV", $sformatf("Local RAM Read Hit: Addr=0x%03h, Data=0x%02h", vif.slave_cb.PADDR, slave_mem[vif.slave_cb.PADDR]), UVM_HIGH)
             end
             else begin
-              bit [7:0] fallback_data = vif.slave_cb.PADDR[7:0] ^ 8'hA5; // Computes predictable fallback pattern from address
+              bit [7:0] fallback_data = vif.slave_cb.PADDR[7:0] ^ 8'hA5;
               vif.slave_cb.PRDATA <= fallback_data;
               `uvm_info("SLV_DRV", $sformatf("Local RAM Read Miss: Addr=0x%03h, Fallback Data=0x%02h", vif.slave_cb.PADDR, fallback_data), UVM_HIGH)
             end
           end
         end
+        // Access phase: PENABLE and PREADY are high, indicating transfer completion. Sample write data if writing, and deassert PREADY.
         else if (vif.slave_cb.PENABLE && vif.slave_cb.PREADY) begin
           if (vif.slave_cb.PWRITE) begin
             slave_mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA; // Saves write data into local associative array RAM

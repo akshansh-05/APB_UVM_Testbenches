@@ -20,7 +20,8 @@ class apb_monitor extends uvm_monitor;
   task run_phase(uvm_phase phase);
     forever begin
       @(vif.monitor_cb);
-      if (vif.monitor_cb.PENABLE === 1'b1 && vif.monitor_cb.PREADY === 1'b1 && (vif.monitor_cb.PSEL1 === 1'b1 || vif.monitor_cb.PSEL2 === 1'b1)) begin // Handshake complete when PENABLE, PREADY, and either PSEL1 or PSEL2 is active
+      // Capture the bus transaction when a valid handshake completes (PENABLE and PREADY are high) on an active slave select (PSEL1 or PSEL2)
+      if (vif.monitor_cb.PENABLE === 1'b1 && vif.monitor_cb.PREADY === 1'b1 && (vif.monitor_cb.PSEL1 === 1'b1 || vif.monitor_cb.PSEL2 === 1'b1)) begin
         apb_seq_item item;
         item = apb_seq_item::type_id::create("item");
 

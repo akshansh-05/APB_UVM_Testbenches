@@ -35,21 +35,23 @@ class apb_driver extends uvm_driver #(apb_seq_item);
 
       `uvm_info("DRV", $sformatf("Driving: %s", item.convert2string()), UVM_MEDIUM)
 
-      @(vif.driver_cb); // Synchronize with the next active clock edge
-      vif.driver_cb.PSEL    <= 1; // Assert PSEL (select this slave)
+      // APB Protocol Phase Transitions:
+      // 1. SETUP Phase: Assert PSEL, drive address/controls, keep PENABLE low.
+      @(vif.driver_cb);
+      vif.driver_cb.PSEL    <= 1;
       vif.driver_cb.PENABLE <= 0;
-      vif.driver_cb.PADDR   <= item.addr; // Drive target address to PADDR
-      vif.driver_cb.PWRITE  <= item.write; // Drive write/read mode control
+      vif.driver_cb.PADDR   <= item.addr;
+      vif.driver_cb.PWRITE  <= item.write;
       if (item.write)
         vif.driver_cb.PWDATA <= item.wdata;
 
-      // Step 3: ACCESS phase (one clock later)
+      // 2. ACCESS Phase: Assert PENABLE high on the next clock cycle.
       @(vif.driver_cb);
       vif.driver_cb.PENABLE <= 1;
 
-      // In this DUT, PREADY goes high combinationally with PENABLE,
+      // 3. Wait states: Loop and wait until PREADY is sampled high from the slave.
       @(vif.driver_cb);
-      while (!vif.driver_cb.PREADY) begin // Loop if slave holds PREADY low (wait states)
+      while (!vif.driver_cb.PREADY) begin
         @(vif.driver_cb);
       end
 

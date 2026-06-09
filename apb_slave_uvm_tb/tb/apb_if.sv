@@ -11,7 +11,8 @@ interface apb_if(input logic PCLK, input logic PRESETn);
   logic        PREADY;
 
   clocking driver_cb @(posedge PCLK);
-    default input #1 output #1;   // 1ns setup/hold time
+    // Setup and hold skews (1ns) to prevent testbench-DUT race conditions
+    default input #1 output #1;
     output PSEL;
     output PENABLE;
     output PWRITE;
