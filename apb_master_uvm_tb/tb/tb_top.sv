@@ -41,11 +41,11 @@ module tb_top;
 
   // Import UVM base library and our testbench package.
   // "import uvm_pkg::*" brings in run_test(), uvm_config_db, etc.
-  // "import apb_master_pkg::*" brings in all our UVM classes
+  // "import apb_pkg::*" brings in all our UVM classes
   // (test, env, agent, driver, monitor, scoreboard, seq_item, sequences).
-  import uvm_pkg::*;
-  `include "uvm_macros.svh"
-  import apb_master_pkg::*;
+  import uvm_pkg::*; // Imports standard UVM package scope to get run_test, etc.
+  `include "uvm_macros.svh" // Includes standard UVM preprocessor macro compiler definitions
+  import apb_pkg::*; // Imports our newly refactored TB package containing all classes
 
   // ---- Clock and Reset ----
   // "reg" is used because these are driven by procedural blocks (initial/always).
@@ -75,7 +75,7 @@ module tb_top;
   // We pass clock and reset as port connections.
   // "apb_vif" is the instance name — this handle is stored in config_db
   // so UVM components (driver, monitor) can access the signals.
-  apb_master_if apb_vif(.PCLK(PCLK), .PRESETn(PRESETn));
+  apb_if apb_vif(.PCLK(PCLK), .PRESETn(PRESETn)); // Instantiates our new refactored apb_if interface with default widths
 
   // ============================================================
   //  SLAVE RESPONDER
@@ -130,6 +130,7 @@ module tb_top;
   );
 
   // ---- Store Interface in Config DB and Start Test ----
+  initial begin // Fix: Starts the missing initial block execution thread for test control
     // =========================================================================
     // THE HARDWARE-SOFTWARE BRIDGE: uvm_config_db#(T)::set
     // =========================================================================
@@ -137,7 +138,7 @@ module tb_top;
     // destroyed on the fly), whereas the HDL design is static. To connect the
     // two, we use UVM's Configuration Database (uvm_config_db).
     //
-    // uvm_config_db#(virtual apb_master_if)::set(...) stores the handle to our
+    // uvm_config_db#(virtual apb_if)::set(...) stores the handle to our
     // physical interface instance (apb_vif) inside the database.
     //
     // Parameters Explained:
@@ -155,14 +156,14 @@ module tb_top;
     //   4. value: The actual data or handle being stored.
     //      - We pass `apb_vif`, which is the physical interface instance.
     // =========================================================================
-    uvm_config_db #(virtual apb_master_if)::set(null, "*", "vif", apb_vif);
+    uvm_config_db #(virtual apb_if)::set(null, "*", "vif", apb_vif); // Registers interface in database as type virtual apb_if
 
     // Enable VCD waveform dumping for debugging.
     // $dumpfile sets the output filename.
     // $dumpvars(0, tb_top) dumps ALL signals in tb_top and below, recursively.
     // NOTE: Requires "-access +rwc" in the xrun command for Xcelium.
-    $dumpfile("apb_master_tb.vcd");
-    $dumpvars(0, tb_top);
+    $dumpfile("apb_master_tb.vcd"); // Creates waveform dumping output database file
+    $dumpvars(0, tb_top); // Tells simulator to dump all signals inside tb_top scope
 
     // =========================================================================
     // STARTING THE UVM ENGINE: run_test()
@@ -178,7 +179,7 @@ module tb_top;
     //      - PARALLEL: run_phase (time-consuming simulation tasks)
     //      - BOTTOM-UP: extract_phase, check_phase, report_phase, final_phase
     // =========================================================================
-    run_test();
-  end
+    run_test(); // Invokes the global UVM test executor
+  end // End of initial begin block
 
 endmodule

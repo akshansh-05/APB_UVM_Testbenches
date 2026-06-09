@@ -15,10 +15,10 @@ vmap work work
 # ---- Compile all files ----
 
 # 1. Interface first
-vlog -sv ../tb/apb_master_if.sv
+vlog -sv ../tb/apb_if.sv
 
 # 2. UVM package (all class files)
-vlog -sv +incdir+../tb ../tb/apb_master_pkg.sv
+vlog -sv +incdir+../tb ../tb/apb_pkg.sv
 
 # 3. RTL (DUT)
 vlog -sv ../rtl/apb_master.sv

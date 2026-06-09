@@ -36,8 +36,8 @@ xrun -uvm -sv \
   -timescale 1ns/1ns \
   -access +rwc \
   +incdir+../tb \
-  ../tb/apb_master_if.sv \
-  ../tb/apb_master_pkg.sv \
+  ../tb/apb_if.sv \
+  ../tb/apb_pkg.sv \
   ../rtl/apb_master.sv \
   ../tb/tb_top.sv \
   +UVM_TESTNAME=apb_master_test \
