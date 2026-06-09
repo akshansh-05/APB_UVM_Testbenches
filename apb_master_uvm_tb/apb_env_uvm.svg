@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 880" font-family="ui-sans-serif, system-ui, sans-serif">
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="680" height="880" fill="#0f1117"/>
+
+  <!-- ── apb_env outer container ── -->
+  <rect x="24" y="24" width="632" height="832" rx="16" fill="#1a1d27" stroke="#3a3f55" stroke-width="1"/>
+  <text x="340" y="52" text-anchor="middle" dominant-baseline="central" font-size="15" font-weight="600" fill="#c9cfe8">apb_env</text>
+  <text x="340" y="70" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5a6080">uvm_env · connect_phase wires all TLM ports</text>
+
+  <!-- ══════════════════════════════════════════
+       SYS_AGENT  (Slate Blue)
+       ══════════════════════════════════════════ -->
+  <rect x="44" y="86" width="296" height="428" rx="12" fill="#1e2540" stroke="#4a5fa6" stroke-width="1"/>
+  <text x="192" y="108" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#7f9cf5">sys_agent</text>
+  <text x="192" y="125" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#4a5fa6">active agent · apb_sys_agent</text>
+
+  <!-- sqr -->
+  <rect x="64" y="140" width="256" height="84" rx="8" fill="#232c52" stroke="#4a5fa6" stroke-width="0.5"/>
+  <text x="192" y="162" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#90a4f7">sqr</text>
+  <text x="192" y="178" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5a6fa6">apb_sequencer</text>
+  <!-- seq_item_export pill -->
+  <rect x="80" y="194" width="140" height="22" rx="10" fill="#2a3468" stroke="#6b7dd6" stroke-width="0.5"/>
+  <text x="150" y="205" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#a5b4fc">seq_item_export</text>
+
+  <!-- TLM pull arrow -->
+  <line x1="192" y1="224" x2="192" y2="248" stroke="#4a5fa6" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arrow)"/>
+  <text x="200" y="238" dominant-baseline="central" font-size="10" fill="#4a5fa6">TLM pull</text>
+
+  <!-- drv -->
+  <rect x="64" y="248" width="256" height="88" rx="8" fill="#232c52" stroke="#4a5fa6" stroke-width="0.5"/>
+  <text x="192" y="270" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#90a4f7">drv</text>
+  <text x="192" y="286" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5a6fa6">apb_sys_driver</text>
+  <!-- seq_item_port pill -->
+  <rect x="80" y="302" width="124" height="22" rx="10" fill="#2a3468" stroke="#6b7dd6" stroke-width="0.5"/>
+  <text x="142" y="313" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#a5b4fc">seq_item_port</text>
+  <text x="192" y="328" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#3a4a80">vif via config_db · drives via master_cb</text>
+
+  <!-- mon -->
+  <rect x="64" y="352" width="256" height="88" rx="8" fill="#232c52" stroke="#4a5fa6" stroke-width="0.5"/>
+  <text x="192" y="374" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#90a4f7">mon</text>
+  <text x="192" y="390" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#5a6fa6">apb_sys_monitor</text>
+  <!-- ap pill -->
+  <rect x="80" y="406" width="36" height="22" rx="10" fill="#163850" stroke="#1d9e75" stroke-width="0.5"/>
+  <text x="98" y="417" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#5dcaa5">ap</text>
+  <text x="122" y="417" dominant-baseline="central" font-size="10" fill="#1d9e75">uvm_analysis_port</text>
+  <text x="192" y="434" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#3a4a80">vif via config_db · samples via sys_monitor_cb</text>
+
+  <!-- ══════════════════════════════════════════
+       SLV_AGENT  (Emerald Green)
+       ══════════════════════════════════════════ -->
+  <rect x="364" y="86" width="276" height="216" rx="12" fill="#112218" stroke="#2d9b6f" stroke-width="1"/>
+  <text x="502" y="108" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#48bb78">slv_agent</text>
+  <text x="502" y="125" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#2d9b6f">reactive agent · apb_slv_agent</text>
+
+  <!-- slv drv -->
+  <rect x="384" y="140" width="236" height="140" rx="8" fill="#132a1c" stroke="#2d9b6f" stroke-width="0.5"/>
+  <text x="502" y="162" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#68d391">drv</text>
+  <text x="502" y="178" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#2d9b6f">apb_slv_driver · purely reactive</text>
+  <text x="502" y="196" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#1d6b45">no sequencer · no monitor</text>
+  <text x="502" y="212" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#1d6b45">vif via config_db · slave_cb</text>
+  <text x="502" y="228" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#2d9b6f">drives PREADY  PRDATA  PSLVERR</text>
+  <text x="502" y="244" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#1d6b45">samples PSEL1/2  PWRITE</text>
+
+  <!-- ══════════════════════════════════════════
+       STANDALONE BUS MONITOR  (Coral)
+       ══════════════════════════════════════════ -->
+  <rect x="364" y="318" width="276" height="196" rx="12" fill="#2a0e0e" stroke="#c44d58" stroke-width="1"/>
+  <text x="502" y="340" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#fc8181">monitor</text>
+  <text x="502" y="357" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#c44d58">standalone · apb_monitor</text>
+
+  <rect x="384" y="370" width="236" height="120" rx="8" fill="#320e0e" stroke="#c44d58" stroke-width="0.5"/>
+  <text x="502" y="392" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#f87171">passive bus monitor</text>
+  <text x="502" y="410" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#9b2c2c">samples active APB bus transfers</text>
+  <text x="502" y="426" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#9b2c2c">vif via config_db · monitor_cb</text>
+  <!-- ap pill -->
+  <rect x="400" y="442" width="36" height="22" rx="10" fill="#163850" stroke="#1d9e75" stroke-width="0.5"/>
+  <text x="418" y="453" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#5dcaa5">ap</text>
+  <text x="444" y="453" dominant-baseline="central" font-size="10" fill="#1d9e75">uvm_analysis_port</text>
+
+  <!-- ══════════════════════════════════════════
+       TLM CONNECTIONS  (arrows into scoreboard)
+       ══════════════════════════════════════════ -->
+
+  <!-- sys_agent.mon.ap → scoreboard.exp_port -->
+  <path d="M 192 440 L 192 534 L 140 534 L 140 556" fill="none" stroke="#4a5fa6" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="92" y="494" dominant-baseline="central" font-size="9" fill="#4a5fa6">expected</text>
+  <text x="92" y="508" dominant-baseline="central" font-size="9" fill="#4a5fa6">path</text>
+
+  <!-- monitor.ap → scoreboard.act_port -->
+  <path d="M 418 464 L 418 528 L 310 528 L 310 556" fill="none" stroke="#c44d58" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+  <text x="434" y="494" dominant-baseline="central" font-size="9" fill="#c44d58">actual</text>
+  <text x="434" y="508" dominant-baseline="central" font-size="9" fill="#c44d58">path</text>
+
+  <!-- ══════════════════════════════════════════
+       SCOREBOARD  (Magenta)
+       ══════════════════════════════════════════ -->
+  <rect x="44" y="540" width="596" height="296" rx="12" fill="#1e0a26" stroke="#a3348c" stroke-width="1"/>
+  <text x="342" y="562" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="#ed64a6">scoreboard</text>
+  <text x="342" y="578" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#a3348c">apb_scoreboard · uvm_scoreboard</text>
+
+  <!-- exp_port -->
+  <rect x="64" y="594" width="168" height="52" rx="8" fill="#280a36" stroke="#a3348c" stroke-width="0.5"/>
+  <text x="148" y="614" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#f9a8d4">exp_port</text>
+  <text x="148" y="632" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#805ad5">uvm_analysis_imp_expected</text>
+
+  <!-- act_port -->
+  <rect x="248" y="594" width="168" height="52" rx="8" fill="#280a36" stroke="#a3348c" stroke-width="0.5"/>
+  <text x="332" y="614" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#f9a8d4">act_port</text>
+  <text x="332" y="632" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#805ad5">uvm_analysis_imp_actual</text>
+
+  <!-- exp_q -->
+  <rect x="432" y="594" width="96" height="52" rx="8" fill="#1c1226" stroke="#6b2f8a" stroke-width="0.5" stroke-dasharray="4 2"/>
+  <text x="480" y="614" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#d6bcfa">exp_q</text>
+  <text x="480" y="632" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#6b2f8a">expected queue</text>
+
+  <!-- ref_mem -->
+  <rect x="542" y="594" width="88" height="52" rx="8" fill="#1c1226" stroke="#6b2f8a" stroke-width="0.5" stroke-dasharray="4 2"/>
+  <text x="586" y="614" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#d6bcfa">ref_mem</text>
+  <text x="586" y="632" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#6b2f8a">ref memory</text>
+
+  <!-- Internal connections: ports → queues -->
+  <line x1="148" y1="646" x2="148" y2="672" stroke="#a3348c" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+  <line x1="332" y1="646" x2="332" y2="672" stroke="#a3348c" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+  <line x1="148" y1="672" x2="620" y2="672" stroke="#6b2f8a" stroke-width="0.6" fill="none"/>
+  <line x1="480" y1="672" x2="480" y2="646" stroke="#a3348c" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+  <line x1="586" y1="672" x2="586" y2="646" stroke="#a3348c" stroke-width="0.8" stroke-dasharray="3 2" marker-end="url(#arrow)"/>
+
+  <!-- compare() box -->
+  <rect x="100" y="690" width="480" height="44" rx="8" fill="#280a36" stroke="#a3348c" stroke-width="0.5"/>
+  <text x="340" y="708" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="600" fill="#ed64a6">compare()</text>
+  <text x="340" y="726" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#805ad5">expected vs actual · pass / fail report</text>
+
+  <!-- connection labels row -->
+  <rect x="64" y="750" width="596" height="60" rx="8" fill="#130818" stroke="#6b2f8a" stroke-width="0.5"/>
+  <text x="342" y="768" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="600" fill="#d6bcfa">TLM connections — apb_env::connect_phase</text>
+  <text x="342" y="786" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#9b59b6">connection 1 (expected):  sys_agent.mon.ap.connect( scoreboard.exp_port )</text>
+  <text x="342" y="802" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#9b59b6">connection 2 (actual):      monitor.ap.connect( scoreboard.act_port )</text>
+
+  <!-- note: slv_agent not in any path -->
+  <text x="342" y="826" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#4a3060">slv_agent is not on either analysis path</text>
+
+</svg>
