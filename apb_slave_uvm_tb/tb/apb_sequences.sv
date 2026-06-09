@@ -3,16 +3,20 @@
 //     3. apb_write_read_seq  — Write known data, then read it back
 
 // SEQUENCE 1: Write Sequence
+// The test sequence generates transaction stimuli (writes followed by reads)
+// and drives them on the system sequencer interface.
 class apb_write_seq extends uvm_sequence #(apb_seq_item);
 
   `uvm_object_utils(apb_write_seq)
 
   int num_txns = 5;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_write_seq");
     super.new(name);
   endfunction
 
+    // Body: sequence body containing the transaction generation and randomization loops
   task body();
     apb_seq_item item;
     `uvm_info("SEQ", $sformatf("Starting WRITE sequence with %0d transactions", num_txns), UVM_MEDIUM)

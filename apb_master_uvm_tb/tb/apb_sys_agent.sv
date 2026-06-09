@@ -1,3 +1,5 @@
+// The system-side agent groups the driver, sequencer, and monitor that interact
+// with the host side of the APB Master DUT.
 class apb_sys_agent extends uvm_agent;
 
   `uvm_component_utils(apb_sys_agent)
@@ -6,10 +8,12 @@ class apb_sys_agent extends uvm_agent;
   apb_sys_monitor   mon;
   apb_sequencer     sqr;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_sys_agent", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
 
@@ -21,6 +25,7 @@ class apb_sys_agent extends uvm_agent;
     end
   endfunction
 
+    // Connect Phase: wire TLM analysis ports, exports, and sequencer interfaces together
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
     if (get_is_active() == UVM_ACTIVE) begin

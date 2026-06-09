@@ -3,6 +3,8 @@
 `uvm_analysis_imp_decl(_expected)
 `uvm_analysis_imp_decl(_actual)
 
+// The dual-port scoreboard compares expected system requests with actual APB
+// bus transfers to verify correct address decoding, data compliance, and status lines.
 class apb_scoreboard extends uvm_scoreboard;
 
   `uvm_component_utils(apb_scoreboard)
@@ -18,10 +20,12 @@ class apb_scoreboard extends uvm_scoreboard;
   protected bit [7:0] ref_mem [bit [8:0]];
   protected apb_seq_item exp_q [$];
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_scoreboard", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     exp_port = new("exp_port", this);
@@ -133,6 +137,7 @@ class apb_scoreboard extends uvm_scoreboard;
 
   endfunction
 
+    // Report Phase: display simulation run statistics, error summaries, and checks passed
   function void report_phase(uvm_phase phase);
     super.report_phase(phase);
     `uvm_info("SCB", "================================================", UVM_LOW)

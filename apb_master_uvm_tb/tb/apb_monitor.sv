@@ -1,3 +1,5 @@
+// The standalone APB bus monitor passively samples transaction pins on the bus,
+// checks protocol compliance, and broadcasts completed transactions to the scoreboard.
 class apb_monitor extends uvm_monitor;
 
   `uvm_component_utils(apb_monitor)
@@ -6,10 +8,12 @@ class apb_monitor extends uvm_monitor;
 
   uvm_analysis_port #(apb_seq_item) ap;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_monitor", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     ap = new("ap", this);
@@ -17,6 +21,7 @@ class apb_monitor extends uvm_monitor;
       `uvm_fatal("MON", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
+    // Run Phase: main simulation execution loop handling active driving or passive monitoring
   task run_phase(uvm_phase phase);
     forever begin
       @(vif.monitor_cb);

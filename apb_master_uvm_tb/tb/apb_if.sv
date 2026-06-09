@@ -1,3 +1,6 @@
+// The APB interface bundles all host-side, bus-side, and slave-side signals.
+// It provides specialized clocking blocks with setup and hold skews to
+// prevent testbench-DUT race conditions during timing simulations.
 interface apb_if (
   input logic PCLK,
   input logic PRESETn

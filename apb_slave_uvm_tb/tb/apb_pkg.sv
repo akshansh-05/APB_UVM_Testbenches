@@ -1,6 +1,8 @@
 //   SystemVerilog requires classes to be compiled before they are used.
 //   keeps all classes in a single namespace.
 
+// The APB package compiles all testbench interfaces, transaction sequence items,
+// sequencers, drivers, monitors, agents, scoreboards, and test scenarios.
 package apb_pkg;
 
   import uvm_pkg::*;

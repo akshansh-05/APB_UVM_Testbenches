@@ -4,22 +4,27 @@
 //   Cycle 2 (ACCESS phase):
 //     - Assert PENABLE = 1
 
+// The driver converts sequence items into APB signal wiggles (Setup and Access phases)
+// to exercise the Slave DUT.
 class apb_driver extends uvm_driver #(apb_seq_item);
 
   `uvm_component_utils(apb_driver)
 
   virtual apb_if.driver vif;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_driver", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
       `uvm_fatal("DRV", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
+    // Run Phase: main simulation execution loop handling active driving or passive monitoring
   task run_phase(uvm_phase phase);
 
     vif.driver_cb.PSEL    <= 0;

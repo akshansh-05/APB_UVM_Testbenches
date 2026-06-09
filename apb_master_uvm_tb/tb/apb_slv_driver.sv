@@ -1,3 +1,5 @@
+// The reactive slave driver models a physical slave RAM, responding to PSEL lines,
+// driving read data, and storing write data during handshake cycles.
 class apb_slv_driver extends uvm_driver #(apb_seq_item);
 
   `uvm_component_utils(apb_slv_driver)
@@ -6,16 +8,19 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
 
   protected bit [7:0] slave_mem [bit [8:0]];             // Local associative array acting as reactive slave RAM
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_slv_driver", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
       `uvm_fatal("SLV_DRV", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
+    // Run Phase: main simulation execution loop handling active driving or passive monitoring
   task run_phase(uvm_phase phase);
     wait(vif.PRESETn === 1'b1);
 

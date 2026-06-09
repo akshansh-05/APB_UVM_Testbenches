@@ -1,3 +1,5 @@
+// The system monitor samples host-side command requests to create expected
+// transactions for scoreboard comparison.
 class apb_sys_monitor extends uvm_monitor;
 
   `uvm_component_utils(apb_sys_monitor)
@@ -6,10 +8,12 @@ class apb_sys_monitor extends uvm_monitor;
 
   uvm_analysis_port #(apb_seq_item) ap;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_sys_monitor", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     ap = new("ap", this);
@@ -17,6 +21,7 @@ class apb_sys_monitor extends uvm_monitor;
       `uvm_fatal("SYS_MON", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
+    // Run Phase: main simulation execution loop handling active driving or passive monitoring
   task run_phase(uvm_phase phase);
     forever begin
       @(vif.sys_monitor_cb);

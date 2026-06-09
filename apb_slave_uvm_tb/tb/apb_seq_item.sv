@@ -2,6 +2,8 @@
 //     - What data to write (if writing)?
 //     - Is it a read or write?
 
+// The sequence item represents the basic APB transaction packet flowing
+// through the testbench, storing address, write data, direction, and interface states.
 class apb_seq_item extends uvm_sequence_item;
 
   rand bit [7:0] addr;
@@ -20,6 +22,7 @@ class apb_seq_item extends uvm_sequence_item;
     `uvm_field_int(rdata, UVM_ALL_ON)
   `uvm_object_utils_end
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_seq_item");
     super.new(name);
   endfunction

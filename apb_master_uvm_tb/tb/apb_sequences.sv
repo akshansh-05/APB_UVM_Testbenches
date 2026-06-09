@@ -1,3 +1,5 @@
+// The test sequence generates transaction stimuli (writes followed by reads)
+// and drives them on the system sequencer interface.
 class apb_write_read_seq extends uvm_sequence #(apb_seq_item);
 
   `uvm_object_utils(apb_write_read_seq)
@@ -5,10 +7,12 @@ class apb_write_read_seq extends uvm_sequence #(apb_seq_item);
   bit [8:0] target_addr;
   bit [7:0] target_wdata;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_write_read_seq");
     super.new(name);
   endfunction
 
+    // Body: sequence body containing the transaction generation and randomization loops
   task body();                                           // Body task where sequence logic runs
     apb_seq_item write_item;
     apb_seq_item read_item;

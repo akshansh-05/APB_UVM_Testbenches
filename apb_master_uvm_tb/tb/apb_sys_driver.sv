@@ -1,19 +1,24 @@
+// The system driver drives host-side inputs (command, address, write data)
+// to prompt the Master DUT to initiate APB bus transfers.
 class apb_sys_driver extends uvm_driver #(apb_seq_item);
 
   `uvm_component_utils(apb_sys_driver)                   // Factory registration macro for UVM components
 
   virtual apb_if vif;
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_sys_driver", uvm_component parent);
     super.new(name, parent);
   endfunction
 
+    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
       `uvm_fatal("DRV", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
+    // Run Phase: main simulation execution loop handling active driving or passive monitoring
   task run_phase(uvm_phase phase);
     @(vif.master_cb);
 

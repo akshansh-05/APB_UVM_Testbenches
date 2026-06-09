@@ -6,6 +6,8 @@
 
 `timescale 1ns/1ns
 
+// The top-level testbench module generates clock and reset, instantiates
+// the physical interfaces, wires the DUT, and triggers the UVM run phase.
 module tb_top;
 
   import uvm_pkg::*;

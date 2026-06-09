@@ -1,3 +1,5 @@
+// The sequence item represents the basic APB transaction packet flowing
+// through the testbench, storing address, write data, direction, and interface states.
 class apb_seq_item extends uvm_sequence_item;
 
   rand bit [8:0] addr;                                        // 9-bit randomized address; bit[8] selects slave, bits[7:0] target offset
@@ -29,10 +31,12 @@ class apb_seq_item extends uvm_sequence_item;
     `uvm_field_int(pslverr, UVM_ALL_ON)
   `uvm_object_utils_end
 
+    // Constructor: standard UVM component/object constructor initializing the parent and name
   function new(string name = "apb_seq_item");
     super.new(name);
   endfunction
 
+    // Convert2string: format transaction fields into a readable string for debug logs
   virtual function string convert2string();
     return $sformatf("addr=0x%03h wdata=0x%02h read=%0b | paddr=0x%03h pwdata=0x%02h pwrite=%0b rdata=0x%02h psel1=%0b psel2=%0b penable=%0b pslverr=%0b",
                      addr, wdata, read, paddr, pwdata, pwrite, rdata, psel1, psel2, penable, pslverr);

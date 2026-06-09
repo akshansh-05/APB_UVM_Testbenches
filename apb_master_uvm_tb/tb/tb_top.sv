@@ -1,4 +1,6 @@
-//   Top-level testbench module for the APB Master Bridge.
+//   Top-level testbench // The top-level testbench module generates clock and reset, instantiates
+// the physical interfaces, wires the DUT, and triggers the UVM run phase.
+module for the APB Master Bridge.
 //   This is the ONLY module in the testbench (everything else is classes).
 //   It connects the UVM world (classes) to the RTL world (modules) via
 //     4. Provide a slave responder (since there's no real slave)
