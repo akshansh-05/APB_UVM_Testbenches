@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //   The Agent is a container that bundles together:
 //   had multiple APB ports, you'd have one Agent per port.
 

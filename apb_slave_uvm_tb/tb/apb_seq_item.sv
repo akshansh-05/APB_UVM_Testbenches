@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //     - What address to access?
 //     - What data to write (if writing)?
 //     - Is it a read or write?

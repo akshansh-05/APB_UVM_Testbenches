@@ -17,8 +17,8 @@
 //     4. apb_sys_monitor — uses apb_seq_item
 //     5. apb_sys_agent   — uses driver, monitor, sequencer
 //     6. apb_slv_driver  — uses apb_seq_item
-//     7. apb_slv_agent   — uses slv_driver
-//     8. apb_monitor     — uses apb_seq_item
+//     7. apb_monitor     — uses apb_seq_item (inside slave agent)
+//     8. apb_slv_agent   — uses slv_driver, monitor, sequencer
 //     9. apb_scoreboard  — uses apb_seq_item
 //    10. apb_env         — uses all agents, monitor, scoreboard
 //    11. apb_sequences   — uses apb_seq_item
@@ -40,8 +40,8 @@ package apb_pkg;
   `include "apb_sys_monitor.sv"   // 4.  System-side passive monitor
   `include "apb_sys_agent.sv"     // 5.  System-side agent container
   `include "apb_slv_driver.sv"    // 6.  Reactive slave driver
-  `include "apb_slv_agent.sv"     // 7.  Slave agent container
-  `include "apb_monitor.sv"       // 8.  Standalone APB bus monitor
+  `include "apb_monitor.sv"       // 7.  APB bus monitor (inside slave agent)
+  `include "apb_slv_agent.sv"     // 8.  Slave agent container
   `include "apb_scoreboard.sv"    // 9.  Verification checker scoreboard
   `include "apb_env.sv"           // 10. Environment container
   `include "apb_sequences.sv"     // 11. Stimulus sequences

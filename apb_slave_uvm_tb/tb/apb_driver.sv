@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //     - Assert PSEL = 1
 //     - Drive PADDR, PWDATA, PWRITE
 //     - Keep PENABLE = 0

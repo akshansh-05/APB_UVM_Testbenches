@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //   The same Env can be reused across many different tests.
 
 // The UVM environment container class groups and instantiates all sub-components:

@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //   It is responsible for:
 
 // The test class constructs the verification environment, configures test

@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //     2. Maintains a REFERENCE MODEL (a simple memory array).
 //   The scoreboard has its own associative array (ref_mem) that acts as
 //   a "golden" copy of what the slave's memory SHOULD contain.

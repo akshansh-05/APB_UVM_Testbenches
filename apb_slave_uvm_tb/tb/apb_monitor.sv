@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 // The standalone APB bus monitor passively samples transaction pins on the bus,
 // checks protocol compliance, and broadcasts completed transactions to the scoreboard.
 class apb_monitor extends uvm_monitor;

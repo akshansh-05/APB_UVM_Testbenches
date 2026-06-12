@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 //     1. apb_write_seq       — Write random data to random addresses
 //     2. apb_read_seq        — Read from random addresses
 //     3. apb_write_read_seq  — Write known data, then read it back
