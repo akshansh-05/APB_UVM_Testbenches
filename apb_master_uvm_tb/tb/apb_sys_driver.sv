@@ -18,6 +18,7 @@ class apb_sys_driver extends uvm_driver #(apb_seq_item);
   endfunction
 
   task run_phase(uvm_phase phase);
+    wait(vif.PRESETn === 1'b1);
     @(vif.master_cb);
 
     // Initialize system-side signals to idle
