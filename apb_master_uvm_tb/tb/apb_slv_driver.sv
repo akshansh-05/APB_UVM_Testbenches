@@ -19,7 +19,9 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
   endfunction
 
   task run_phase(uvm_phase phase);
+    `uvm_info("SLV_DRV", "run_phase started, waiting for reset release...", UVM_LOW)
     wait(vif.PRESETn === 1'b1);
+    `uvm_info("SLV_DRV", "Reset released, initializing signals...", UVM_LOW)
 
     @(vif.slave_cb);
     vif.slave_cb.PREADY <= 1'b0;
@@ -29,10 +31,10 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
       @(vif.slave_cb);
 
       // DEBUG: print what slv_driver sees every cycle
-      `uvm_info("SLV_DRV", $sformatf("CYCLE: transfer=%0b PSEL1=%0b PSEL2=%0b PENABLE=%0b PSLVERR=%0b",
-                vif.transfer, vif.slave_cb.PSEL1, vif.slave_cb.PSEL2, vif.slave_cb.PENABLE, vif.PSLVERR), UVM_LOW)
+      `uvm_info("SLV_DRV", $sformatf("CYCLE: PSEL1=%0b PSEL2=%0b PENABLE=%0b PSLVERR=%0b",
+                vif.slave_cb.PSEL1, vif.slave_cb.PSEL2, vif.slave_cb.PENABLE, vif.PSLVERR), UVM_LOW)
 
-      if (vif.transfer && (vif.slave_cb.PSEL1 || vif.slave_cb.PSEL2)) begin
+      if (vif.slave_cb.PSEL1 || vif.slave_cb.PSEL2) begin
 
         // ---- SETUP PHASE ----
         if (!vif.slave_cb.PENABLE) begin
