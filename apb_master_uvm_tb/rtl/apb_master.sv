@@ -31,7 +31,7 @@ begin
                 state <= next_state;
 end
 
-always @(*) begin
+always @(state,transfer,PREADY) begin
         if(!PRESETn)
                 next_state = IDLE;
         else begin
