@@ -28,6 +28,10 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
     forever begin
       @(vif.slave_cb);
 
+      // DEBUG: print what slv_driver sees every cycle
+      `uvm_info("SLV_DRV", $sformatf("CYCLE: transfer=%0b PSEL1=%0b PSEL2=%0b PENABLE=%0b PSLVERR=%0b",
+                vif.transfer, vif.slave_cb.PSEL1, vif.slave_cb.PSEL2, vif.slave_cb.PENABLE, vif.PSLVERR), UVM_LOW)
+
       if (vif.transfer && (vif.slave_cb.PSEL1 || vif.slave_cb.PSEL2)) begin
 
         // ---- SETUP PHASE ----
