@@ -1,7 +1,7 @@
 // =============================================================================
-// FILE: apb_monitor.sv
+// FILE: apb_slv_monitor.sv
 // DESCRIPTION:
-//   APB Bus Monitor — a standalone PASSIVE monitor observing the APB bus signals
+//   APB Slave/Bus Monitor — a PASSIVE monitor observing the APB bus signals
 //   between the Master DUT and the Slave Driver.
 //
 //   This monitor captures COMPLETED APB transactions by detecting the handshake
@@ -12,7 +12,7 @@
 //   which compares them against the "EXPECTED" items from the system monitor.
 //
 //   DATA FLOW:
-//     APB bus signals → apb_monitor → scoreboard.act_port (actual comparison)
+//     APB bus signals → apb_slv_monitor → scoreboard.act_port (actual comparison)
 //
 //   SIGNALS SAMPLED (via monitor_cb clocking block):
 //     - PSEL1, PSEL2  : Which slave was selected
@@ -35,11 +35,11 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-class apb_monitor extends uvm_monitor;
+class apb_slv_monitor extends uvm_monitor;
 
-  `uvm_component_utils(apb_monitor)    // Register with UVM factory
+  `uvm_component_utils(apb_slv_monitor)    // Register with UVM factory
 
-  virtual apb_if vif;                  // Virtual interface handle
+  virtual apb_if vif;                      // Virtual interface handle
 
   // ---------------------------------------------------------------------------
   // ANALYSIS PORT
@@ -51,7 +51,7 @@ class apb_monitor extends uvm_monitor;
   // ---------------------------------------------------------------------------
   // CONSTRUCTOR
   // ---------------------------------------------------------------------------
-  function new(string name = "apb_monitor", uvm_component parent);
+  function new(string name = "apb_slv_monitor", uvm_component parent);
     super.new(name, parent);
   endfunction
 
@@ -63,7 +63,7 @@ class apb_monitor extends uvm_monitor;
     super.build_phase(phase);
     ap = new("ap", this);
     if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
-      `uvm_fatal("MON", "Could not get virtual interface 'vif' from config_db")
+      `uvm_fatal("SLV_MON", "Could not get virtual interface 'vif' from config_db")
   endfunction
 
   // ---------------------------------------------------------------------------
@@ -100,7 +100,7 @@ class apb_monitor extends uvm_monitor;
         item.penable = vif.monitor_cb.PENABLE;     // Should always be 1 here
         item.pslverr = vif.monitor_cb.PSLVERR;    // Error flag status
 
-        `uvm_info("MON", $sformatf("Captured APB Bus Transaction: addr=0x%03h pwrite=%0b data=0x%02h", item.paddr, item.pwrite, item.pwrite ? item.pwdata : item.rdata), UVM_MEDIUM)
+        `uvm_info("SLV_MON", $sformatf("Captured APB Bus Transaction: addr=0x%03h pwrite=%0b data=0x%02h", item.paddr, item.pwrite, item.pwrite ? item.pwdata : item.rdata), UVM_MEDIUM)
 
         // Delta-cycle delay: ensures sys_monitor's expected item reaches the
         // scoreboard queue BEFORE this actual item triggers the comparison.

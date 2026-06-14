@@ -117,7 +117,7 @@ interface apb_if (
 
   // ---------------------------------------------------------------------------
   // CLOCKING BLOCK: monitor_cb
-  // Used by: apb_monitor (standalone APB bus monitor)
+  // Used by: apb_slv_monitor (APB bus monitor in slave agent)
   // Purpose: Passively samples ALL APB bus signals to build "actual" transaction
   //          items for the scoreboard. Captures the completed handshake snapshot.
   // ---------------------------------------------------------------------------
@@ -140,6 +140,6 @@ interface apb_if (
   modport master_mp (clocking master_cb, input PCLK, input PRESETn);      // For apb_sys_driver
   modport slave_mp  (clocking slave_cb,  input PCLK, input PRESETn);      // For apb_slv_driver
   modport sys_monitor_mp (clocking sys_monitor_cb, input PCLK, input PRESETn);  // For apb_sys_monitor
-  modport monitor_mp (clocking monitor_cb, input PCLK, input PRESETn);    // For apb_monitor
+  modport monitor_mp (clocking monitor_cb, input PCLK, input PRESETn);    // For apb_slv_monitor
 
 endinterface

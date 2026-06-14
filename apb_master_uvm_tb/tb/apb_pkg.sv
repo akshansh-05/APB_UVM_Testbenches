@@ -10,7 +10,7 @@ package apb_pkg;
   `include "apb_sys_monitor.sv"
   `include "apb_sys_agent.sv"
   `include "apb_slv_driver.sv"
-  `include "apb_monitor.sv"
+  `include "apb_slv_monitor.sv"
   `include "apb_slv_agent.sv"
   `include "apb_scoreboard.sv"
   `include "apb_env.sv"

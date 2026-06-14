@@ -8,7 +8,7 @@
 //     The scoreboard has TWO analysis ports (using `uvm_analysis_imp_decl`):
 //       1. exp_port (expected) — receives items from apb_sys_monitor
 //          → Triggers write_expected(): queues the item and updates ref_mem
-//       2. act_port (actual)   — receives items from apb_monitor
+//       2. act_port (actual)   — receives items from apb_slv_monitor
 //          → Triggers write_actual(): pops from queue and runs all checks
 //
 //   VERIFICATION STRATEGY:

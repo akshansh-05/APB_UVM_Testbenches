@@ -11,7 +11,7 @@
 //     System inputs → apb_sys_monitor → scoreboard.exp_port (expected queue)
 //
 //   The scoreboard later compares these expected transactions against the
-//   "actual" transactions captured by the bus monitor (apb_monitor).
+//   "actual" transactions captured by the bus monitor (apb_slv_monitor).
 //
 //   SIGNALS SAMPLED (via sys_monitor_cb clocking block):
 //     - transfer         : Detects when a new transfer request is active
@@ -25,7 +25,7 @@
 //   IMPORTANT TIMING:
 //     This monitor must push its expected item to the scoreboard BEFORE the
 //     bus monitor pushes the actual item. This ordering is guaranteed by the
-//     delta-cycle delay (#0) in apb_monitor.sv.
+//     delta-cycle delay (#0) in apb_slv_monitor.sv.
 // =============================================================================
 
 `include "uvm_macros.svh"
