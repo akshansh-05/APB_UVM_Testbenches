@@ -25,7 +25,7 @@ class apb_sys_driver extends uvm_driver #(apb_seq_item);
     vif.master_cb.transfer        <= 0;
     vif.master_cb.READ_WRITE      <= 0;
     vif.master_cb.apb_write_paddr <= 0;
-    // vif.master_cb.apb_read_paddr  <= 0;  // TODO: uncomment when adding read support
+    vif.master_cb.apb_read_paddr  <= 0;
     vif.master_cb.apb_write_data  <= 0;
 
     forever begin
@@ -37,10 +37,8 @@ class apb_sys_driver extends uvm_driver #(apb_seq_item);
       // Drive WRITE transaction signals onto the DUT's system-side inputs
       vif.master_cb.transfer        <= 1;
       vif.master_cb.READ_WRITE      <= item.read;       // 0=Write
-      vif.master_cb.apb_write_paddr <= item.addr;
-      vif.master_cb.apb_write_data  <= item.wdata;
 
-      `uvm_info("SYS_DRV", "======== Signals Driven to DUT (WRITE) =============", UVM_LOW)
+      `uvm_info("SYS_DRV", "======== Signals Driven to DUT =======================", UVM_LOW)
       `uvm_info("SYS_DRV", $sformatf("  transfer        = 1"),                     UVM_LOW)
       `uvm_info("SYS_DRV", $sformatf("  READ_WRITE      = %0b (0=Write)", item.read), UVM_LOW)
       `uvm_info("SYS_DRV", $sformatf("  apb_write_paddr = 0x%03h", item.addr),     UVM_LOW)

@@ -6,7 +6,7 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
   `uvm_component_utils(apb_slv_driver)
 
   virtual apb_if vif;
-  // protected bit [7:0] slave_mem [bit [8:0]];  // TODO: uncomment when adding memory model
+  protected bit [7:0] slave_mem [bit [8:0]];
 
   function new(string name = "apb_slv_driver", uvm_component parent);
     super.new(name, parent);

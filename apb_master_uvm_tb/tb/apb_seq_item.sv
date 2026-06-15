@@ -54,8 +54,12 @@ class apb_seq_item extends uvm_sequence_item;
 
   // ---------------------------------------------------------------------------
   // CONSTRAINT: Limit address to valid 9-bit range (0x000 to 0x1FF)
+  //   - Fixed MSB (addr[8] == 0) to exclusively select PSEL1
   // ---------------------------------------------------------------------------
-  constraint c_valid_addr { addr inside {[0:511]}; }
+  constraint c_valid_addr { 
+    addr inside {[0:511]}; 
+    addr[8] == 1'b0; 
+  }
 
   // ---------------------------------------------------------------------------
   // FIELD AUTOMATION — register all fields for automatic copy/compare/print
