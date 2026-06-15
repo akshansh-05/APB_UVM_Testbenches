@@ -29,12 +29,8 @@ class apb_master_test extends uvm_test;
 
     `uvm_info("TEST", "======== APB Master Bridge Test Starting ========", UVM_LOW)
 
-    #100ns;  // Wait for reset to propagate
-
     seq = apb_sequence::type_id::create("seq");
     seq.start(env.sys_agent.sqr);
-
-    #100ns;  // Post-sequence settling
 
     `uvm_info("TEST", "======== APB Master Bridge Test Complete ========", UVM_LOW)
 

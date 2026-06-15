@@ -6,7 +6,7 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
   `uvm_component_utils(apb_slv_driver)
 
   virtual apb_if vif;
-  // protected bit [7:0] slave_mem [bit [8:0]];  // TODO: uncomment when adding memory model
+  protected bit [7:0] slave_mem [bit [8:0]];
 
   function new(string name = "apb_slv_driver", uvm_component parent);
     super.new(name, parent);
@@ -49,13 +49,12 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
 
           vif.slave_cb.PREADY <= 1'b1;  // Must assert PREADY or handshake hangs
 
-          // TODO: uncomment when adding memory model for read responses
-          // if (!vif.slave_cb.PWRITE) begin
-          //   if (slave_mem.exists(vif.slave_cb.PADDR))
-          //     vif.slave_cb.PRDATA <= slave_mem[vif.slave_cb.PADDR];
-          //   else
-          //     vif.slave_cb.PRDATA <= vif.slave_cb.PADDR[7:0] ^ 8'hA5;
-          // end
+          if (!vif.slave_cb.PWRITE) begin
+            if (slave_mem.exists(vif.slave_cb.PADDR))
+              vif.slave_cb.PRDATA <= slave_mem[vif.slave_cb.PADDR];
+            else
+              vif.slave_cb.PRDATA <= vif.slave_cb.PADDR[7:0] ^ 8'hA5;
+          end
         end
 
         // ---- ACCESS PHASE ----
@@ -64,9 +63,8 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
           `uvm_info("SLV_DRV", $sformatf("  PENABLE = %0b, PREADY = %0b --> Handshake Complete!", vif.slave_cb.PENABLE, vif.PREADY), UVM_LOW)
           `uvm_info("SLV_DRV", "====================================================", UVM_LOW)
 
-          // TODO: uncomment when adding memory model for write storage
-          // if (vif.slave_cb.PWRITE)
-          //   slave_mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
+          if (vif.slave_cb.PWRITE)
+            slave_mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
 
           vif.slave_cb.PREADY <= 1'b0;
         end
