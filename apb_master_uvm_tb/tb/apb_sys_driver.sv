@@ -67,10 +67,9 @@ class apb_sys_driver extends uvm_driver #(apb_seq_item);
         end
       end while (!vif.master_cb.PREADY);
 
-      // TODO: uncomment when adding read support
-      // if (item.read)
-      //   item.rdata = vif.master_cb.apb_read_data_out;
-      // item.pslverr = vif.master_cb.PSLVERR;
+      if (item.read)
+        item.rdata = vif.master_cb.apb_read_data_out;
+      item.pslverr = vif.master_cb.PSLVERR;
 
       vif.master_cb.transfer <= 0;
       @(vif.master_cb);
