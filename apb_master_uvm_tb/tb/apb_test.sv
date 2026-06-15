@@ -1,14 +1,13 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-// Base test — creates the environment
-class test_apb_base extends uvm_test;
+class apb_master_test extends uvm_test;
 
-  `uvm_component_utils(test_apb_base)
+  `uvm_component_utils(apb_master_test)
 
   apb_env env;
 
-  function new(string name = "test_apb_base", uvm_component parent);
+  function new(string name = "apb_master_test", uvm_component parent);
     super.new(name, parent);
   endfunction
 
@@ -23,19 +22,8 @@ class test_apb_base extends uvm_test;
     uvm_top.print_topology();
   endfunction
 
-endclass
-
-// Concrete test — runs write-then-read-back sequence
-class apb_master_test extends test_apb_base;
-
-  `uvm_component_utils(apb_master_test)
-
-  function new(string name = "apb_master_test", uvm_component parent);
-    super.new(name, parent);
-  endfunction
-
   task run_phase(uvm_phase phase);
-    apb_write_read_seq seq;
+    apb_sequence seq;
 
     phase.raise_objection(this);
 
@@ -43,7 +31,7 @@ class apb_master_test extends test_apb_base;
 
     #100ns;  // Wait for reset to propagate
 
-    seq = apb_write_read_seq::type_id::create("seq");
+    seq = apb_sequence::type_id::create("seq");
     seq.start(env.sys_agent.sqr);
 
     #100ns;  // Post-sequence settling
