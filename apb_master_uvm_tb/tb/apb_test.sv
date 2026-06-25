@@ -1,3 +1,5 @@
+
+
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
@@ -23,14 +25,18 @@ class apb_master_test extends uvm_test;
   endfunction
 
   task run_phase(uvm_phase phase);
-    apb_sequence seq;
+    apb_write_read_sequence seq;
 
     phase.raise_objection(this);
 
     `uvm_info("TEST", "======== APB Master Bridge Test Starting ========", UVM_LOW)
+    `uvm_info("TEST", "Running apb_write_read_sequence (comprehensive test)", UVM_LOW)
 
-    seq = apb_sequence::type_id::create("seq");
+    seq = apb_write_read_sequence::type_id::create("seq");
     seq.start(env.sys_agent.sqr);
+
+    // Allow a few cycles for final monitor/scoreboard processing
+    #100;
 
     `uvm_info("TEST", "======== APB Master Bridge Test Complete ========", UVM_LOW)
 

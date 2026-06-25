@@ -3,7 +3,6 @@ package apb_pkg;
   import uvm_pkg::*;
   `include "uvm_macros.svh"
 
-  // Include order: dependency-driven (base types first)
   `include "apb_seq_item.sv"
   `include "apb_sequencer.sv"
   `include "apb_sys_driver.sv"
@@ -14,7 +13,7 @@ package apb_pkg;
   `include "apb_slv_agent.sv"
   `include "apb_scoreboard.sv"
   `include "apb_env.sv"
-  `include "apb_sequences.sv"
+  `include "apb_write_read_sequence.sv"
   `include "apb_test.sv"
 
 endpackage : apb_pkg
