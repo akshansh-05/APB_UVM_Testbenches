@@ -1,48 +1,56 @@
-`include "uvm_macros.svh"
-import uvm_pkg::*;
-
-// The standalone APB bus monitor passively samples transaction pins on the bus,
-// checks protocol compliance, and broadcasts completed transactions to the scoreboard.
+//==================================================================
+// apb_monitor.sv  --  APB passive monitor
+//------------------------------------------------------------------
+// Sends exactly ONE apb_seq_item to the scoreboard per COMPLETED
+// transfer -- captured at the single edge where the slave is in
+// ACCESS and ready (PSEL & PENABLE & PREADY all high).
+//
+// Why this is robust to everything:
+//   * back-to-back : each transfer has its own completion edge, so
+//                    each is captured once -- no merging.
+//   * wait states  : during waits PREADY is low, so we don't capture
+//                    until the real completion edge -> no duplicates.
+//   * reset/abort  : an aborted transfer never reaches PREADY=1, so
+//                    it is simply never sent. PRESETn is also checked.
+//
+// Beginner-safe: one sampling point, no fork/join, no clocking blocks.
+//==================================================================
 class apb_monitor extends uvm_monitor;
-
   `uvm_component_utils(apb_monitor)
 
-  virtual apb_if.monitor vif;
+  virtual apb_if vif;
+  uvm_analysis_port #(apb_seq_item) mon_ap;   // -> scoreboard
 
-  uvm_analysis_port #(apb_seq_item) ap;
-
-    // Constructor: standard UVM component/object constructor initializing the parent and name
-  function new(string name = "apb_monitor", uvm_component parent);
+  function new(string name, uvm_component parent);
     super.new(name, parent);
+    mon_ap = new("mon_ap", this);
   endfunction
 
-    // Build Phase: instantiate sub-components, ports, and retrieve virtual interfaces from config_db
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    ap = new("ap", this);
-    if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
-      `uvm_fatal("MON", "Could not get virtual interface 'vif' from config_db")
+    if (!uvm_config_db#(virtual apb_if)::get(this, "", "vif", vif))
+      `uvm_fatal("MON", "Virtual interface 'vif' not set for the monitor")
   endfunction
 
-    // Run Phase: main simulation execution loop handling active driving or passive monitoring
   task run_phase(uvm_phase phase);
+    apb_seq_item tr;
     forever begin
-      // Sample the bus on each clock. A valid transaction is completed only when PSEL, PENABLE, and PREADY are all asserted.
-      @(vif.monitor_cb);
-      if (vif.monitor_cb.PSEL && vif.monitor_cb.PENABLE) begin
+      @(posedge vif.PCLK);
 
-        if (vif.monitor_cb.PREADY) begin
-          apb_seq_item item = apb_seq_item::type_id::create("item");
+      // A transfer is valid/complete only in ACCESS with the slave
+      // ready, and only when we are not in reset.
+      if (vif.PRESETn === 1'b1 &&
+          vif.PSEL    === 1'b1 &&
+          vif.PENABLE === 1'b1 &&
+          vif.PREADY  === 1'b1) begin
 
-          item.addr  = vif.monitor_cb.PADDR;
-          item.write = vif.monitor_cb.PWRITE;
-          item.wdata = vif.monitor_cb.PWDATA;
-          item.rdata = vif.monitor_cb.PRDATA1;
+        tr        = apb_seq_item::type_id::create("tr");
+        tr.paddr  = vif.PADDR;
+        tr.pwrite = vif.PWRITE;
+        tr.pwdata = vif.PWDATA;
+        tr.prdata = vif.PRDATA;     // meaningful on reads (pwrite==0)
 
-          `uvm_info("MON", $sformatf("Observed: %s", item.convert2string()), UVM_MEDIUM)
-
-          ap.write(item);
-        end
+        mon_ap.write(tr);           // broadcast to subscribers
       end
     end
   endtask
