@@ -1,10 +1,12 @@
-`include "uvm_macros.svh"
-import uvm_pkg::*;
-
 class apb_slv_driver extends uvm_driver #(apb_seq_item);
   `uvm_component_utils(apb_slv_driver)
   virtual apb_if vif;
-  bit [7:0] slave_mem [bit [8:0]];
+
+  // Associative array: only written addresses exist
+  logic [7:0] slave_mem [bit[8:0]];
+
+  // Wait states to insert per access (set from test/config)
+  int wait_cycles = 1;
 
   function new(string name = "apb_slv_driver", uvm_component parent);
     super.new(name, parent);
@@ -13,54 +15,43 @@ class apb_slv_driver extends uvm_driver #(apb_seq_item);
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
-      `uvm_fatal("SLV_DRV", "Could not get virtual interface 'vif' from config_db")
+      `uvm_fatal("SLV_DRV", "Could not get virtual interface 'vif'")
   endfunction
 
   task run_phase(uvm_phase phase);
-    wait(vif.PRESETn === 1'b1);
-    vif.slave_cb.PREADY <= 1'b0;
-    vif.slave_cb.PRDATA <= 8'h00;
+    // Idle defaults
+    vif.slave_cb.PREADY <= 1'b1;
+    vif.slave_cb.PRDATA <= '0;
 
     forever begin
       @(vif.slave_cb);
 
-      // Detect SETUP phase: PSELx asserted, PENABLE still low
+      // Re-init on reset, then skip this cycle
+      if (vif.PRESETn !== 1'b1) begin
+        vif.slave_cb.PREADY <= 1'b1;
+        vif.slave_cb.PRDATA <= '0;
+        continue;
+      end
+
+      // Detect the start of a transfer: SETUP phase (PSEL high, PENABLE low)
       if ((vif.slave_cb.PSEL1 || vif.slave_cb.PSEL2) && !vif.slave_cb.PENABLE) begin
 
-        // For reads: pre-fetch data onto PRDATA during SETUP
-        // DUT latches PRDATA during ENABLE, so it must be stable before then
-        if (!vif.slave_cb.PWRITE) begin
-          if (slave_mem.exists(vif.slave_cb.PADDR))
-            vif.slave_cb.PRDATA <= slave_mem[vif.slave_cb.PADDR];
-          else
-            vif.slave_cb.PRDATA <= 8'h00; // default for unwritten addresses
+        // Insert wait states: hold PREADY low so the master stalls in ENABLE
+        repeat (wait_cycles) begin
+          vif.slave_cb.PREADY <= 1'b0;
+          @(vif.slave_cb);
         end
 
-        // Zero-wait-state: assert PREADY during SETUP so it's seen in ACCESS
+        // Drive the response for the completing cycle
         vif.slave_cb.PREADY <= 1'b1;
+        if (vif.slave_cb.PWRITE)
+          slave_mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
+        else
+          vif.slave_cb.PRDATA <= slave_mem.exists(vif.slave_cb.PADDR)
+                                   ? slave_mem[vif.slave_cb.PADDR] : 8'h00;
 
-        // Move to ACCESS phase
+        // Completion cycle: keep PREADY/PRDATA stable while master samples
         @(vif.slave_cb);
-
-        // ACCESS: PENABLE should be high now, PREADY is already high
-        if (vif.slave_cb.PENABLE && vif.PREADY) begin
-          if (vif.slave_cb.PWRITE) begin
-            slave_mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
-            `uvm_info("SLV_DRV", $sformatf("WRITE: mem[0x%03h] = 0x%02h",
-                      vif.slave_cb.PADDR, vif.slave_cb.PWDATA), UVM_LOW)
-          end else begin
-            `uvm_info("SLV_DRV", $sformatf("READ: mem[0x%03h] => 0x%02h",
-                      vif.slave_cb.PADDR, slave_mem[vif.slave_cb.PADDR]), UVM_LOW)
-          end
-        end
-
-        // Cleanup: deassert after handshake
-        vif.slave_cb.PREADY <= 1'b0;
-        vif.slave_cb.PRDATA <= 8'h00;
-
-      end else begin
-        // No valid SETUP — keep lines idle
-        vif.slave_cb.PREADY <= 1'b0;
       end
     end
   endtask
