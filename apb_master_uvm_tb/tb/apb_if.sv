@@ -1,7 +1,7 @@
-// apb_if.sv: APB Virtual Interface
+// APB Virtual Interface
 interface apb_if (
   input logic PCLK,
-  input logic PRESETn
+  input wire PRESETn
 );
 
   // System-side signals
@@ -11,6 +11,7 @@ interface apb_if (
   logic       READ_WRITE;
   logic       transfer;
   logic [7:0] apb_read_data_out;
+  logic       PSLVERR;
 
   // Slave response signals
   logic [7:0] PRDATA;
@@ -26,28 +27,25 @@ interface apb_if (
 
   // System driver clocking block
   clocking master_cb @(posedge PCLK);
-    default input #1ns output #1ns;
     output transfer, READ_WRITE, apb_write_paddr, apb_read_paddr, apb_write_data;
     input  apb_read_data_out, PREADY, PENABLE;
+    input  PSEL1, PSEL2;
   endclocking
 
   // Slave driver clocking block
   clocking slave_cb @(posedge PCLK);
-    default input #1ns output #1ns;
     input  PSEL1, PSEL2, PENABLE, PADDR, PWRITE, PWDATA;
     output PREADY, PRDATA;
   endclocking
 
   // System monitor clocking block
   clocking sys_monitor_cb @(posedge PCLK);
-    default input #1ns;
     input transfer, READ_WRITE, apb_write_paddr, apb_read_paddr, apb_write_data, apb_read_data_out;
     input PREADY, PENABLE, PSEL1, PSEL2;
   endclocking
 
   // Bus monitor clocking block
   clocking monitor_cb @(posedge PCLK);
-    default input #1ns;
     input PSEL1, PSEL2, PENABLE, PADDR, PWRITE, PWDATA, PREADY, PRDATA;
   endclocking
 

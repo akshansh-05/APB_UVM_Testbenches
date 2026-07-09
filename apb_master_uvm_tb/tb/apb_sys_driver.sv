@@ -36,17 +36,17 @@ class sys_driver extends uvm_driver #(apb_seq_item);
   task drive_transfer(apb_seq_item tr);
     @(vif.master_cb);
 
-    // Present request on the driving edge
+    // Present request on the driving edge.
+    // Single addr feeds both read/write paddr; DUT selects via READ_WRITE.
     vif.master_cb.transfer        <= 1'b1;
-    vif.master_cb.READ_WRITE      <= tr.READ_WRITE;   // 1 = read, 0 = write
-    vif.master_cb.apb_read_paddr  <= tr.apb_read_paddr;
-    vif.master_cb.apb_write_paddr <= tr.apb_write_paddr;
-    vif.master_cb.apb_write_data  <= tr.apb_write_data;
+    vif.master_cb.READ_WRITE      <= tr.read;          // 1 = read, 0 = write
+    vif.master_cb.apb_read_paddr  <= tr.addr;
+    vif.master_cb.apb_write_paddr <= tr.addr;
+    vif.master_cb.apb_write_data  <= tr.wdata;
 
     `uvm_info("SYS_DRV",
-      $sformatf("Driving %s | waddr=0x%0h raddr=0x%0h wdata=0x%0h",
-                tr.READ_WRITE ? "READ" : "WRITE",
-                tr.apb_write_paddr, tr.apb_read_paddr, tr.apb_write_data),
+      $sformatf("Driving %s | addr=0x%0h wdata=0x%0h",
+                tr.read ? "READ" : "WRITE", tr.addr, tr.wdata),
       UVM_MEDIUM)
 
     // Wait synchronously for APB completion: PENABLE && PREADY

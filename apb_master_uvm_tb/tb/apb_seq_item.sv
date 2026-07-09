@@ -38,9 +38,4 @@ class apb_seq_item extends uvm_sequence_item;
     super.new(name);
   endfunction
 
-  virtual function string convert2string();
-    return $sformatf("addr=0x%03h wdata=0x%02h read=%0b | paddr=0x%03h pwdata=0x%02h pwrite=%0b rdata=0x%02h psel1=%0b psel2=%0b penable=%0b",
-                     addr, wdata, read, paddr, pwdata, pwrite, rdata, psel1, psel2, penable);
-  endfunction
-
 endclass
