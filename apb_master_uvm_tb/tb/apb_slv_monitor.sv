@@ -5,9 +5,10 @@ class slave_monitor extends uvm_monitor;
   `uvm_component_utils(slave_monitor)
 
   virtual apb_if vif;
-
-  // Sends one COMPLETION per finished transfer to the scoreboard
   uvm_analysis_port #(apb_seq_item) ap_out;
+
+  // Edge-detection: remember if transfer was completing last cycle
+  bit completing_prev;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -22,18 +23,25 @@ class slave_monitor extends uvm_monitor;
 
   task run_phase(uvm_phase phase);
     apb_seq_item tr;
+    bit completing_now;
+
+    completing_prev = 1'b0;
 
     forever begin
       @(vif.monitor_cb);
 
-      // Completion = the exact cycle the transfer finishes
-      // (PENABLE high AND PREADY high)
-      if (vif.PRESETn === 1'b1 &&
-          vif.monitor_cb.PENABLE === 1'b1 &&
-          vif.monitor_cb.PREADY  === 1'b1) begin
+      if (vif.PRESETn !== 1'b1) begin
+        completing_prev = 1'b0;
+        continue;
+      end
 
+      // Transfer completes this cycle?
+      completing_now = (vif.monitor_cb.PENABLE === 1'b1 &&
+                        vif.monitor_cb.PREADY  === 1'b1);
+
+      // Log a completion only on the RISING edge (one per completed transfer)
+      if (completing_now && !completing_prev) begin
         tr = apb_seq_item::type_id::create("comp");
-
         tr.paddr   = vif.monitor_cb.PADDR;
         tr.pwrite  = vif.monitor_cb.PWRITE;
         tr.pwdata  = vif.monitor_cb.PWDATA;
@@ -49,6 +57,8 @@ class slave_monitor extends uvm_monitor;
 
         ap_out.write(tr);
       end
+
+      completing_prev = completing_now;
     end
   endtask
 

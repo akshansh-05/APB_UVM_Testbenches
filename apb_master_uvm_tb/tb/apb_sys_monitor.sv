@@ -5,9 +5,10 @@ class sys_monitor extends uvm_monitor;
   `uvm_component_utils(sys_monitor)
 
   virtual apb_if vif;
-
-  // Sends one REQUEST per SETUP phase to the scoreboard
   uvm_analysis_port #(apb_seq_item) ap_in;
+
+  // Edge-detection: remember if we were in SETUP last cycle
+  bit in_setup_prev;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -22,19 +23,27 @@ class sys_monitor extends uvm_monitor;
 
   task run_phase(uvm_phase phase);
     apb_seq_item tr;
+    bit in_setup_now;
+
+    in_setup_prev = 1'b0;
 
     forever begin
       @(vif.sys_monitor_cb);
 
-      // SETUP phase = master's request is committed on the bus
-      // (PSEL asserted, PENABLE still low)
-      if (vif.PRESETn === 1'b1 &&
-          (vif.sys_monitor_cb.PSEL1 === 1'b1 || vif.sys_monitor_cb.PSEL2 === 1'b1) &&
-          vif.sys_monitor_cb.PENABLE === 1'b0) begin
+      if (vif.PRESETn !== 1'b1) begin
+        in_setup_prev = 1'b0;   // reset edge tracking
+        continue;
+      end
 
+      // SETUP phase this cycle?
+      in_setup_now = (vif.sys_monitor_cb.PSEL1 === 1'b1 ||
+                      vif.sys_monitor_cb.PSEL2 === 1'b1) &&
+                      vif.sys_monitor_cb.PENABLE === 1'b0;
+
+      // Log a request only on the RISING edge of SETUP (new SETUP entry)
+      if (in_setup_now && !in_setup_prev) begin
         tr = apb_seq_item::type_id::create("req");
-
-        tr.read  = vif.sys_monitor_cb.READ_WRITE;   // 1 = read, 0 = write
+        tr.read  = vif.sys_monitor_cb.READ_WRITE;
         tr.addr  = vif.sys_monitor_cb.READ_WRITE ?
                    vif.sys_monitor_cb.apb_read_paddr :
                    vif.sys_monitor_cb.apb_write_paddr;
@@ -47,6 +56,8 @@ class sys_monitor extends uvm_monitor;
 
         ap_in.write(tr);
       end
+
+      in_setup_prev = in_setup_now;
     end
   endtask
 
