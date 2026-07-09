@@ -1,9 +1,12 @@
-class slave_driver extends uvm_driver #(apb_seq_item);
-  `uvm_component_utils(slave_driver)
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
+class apb_slv_driver extends uvm_driver #(apb_seq_item);
+  `uvm_component_utils(apb_slv_driver)
 
   virtual apb_if vif;
 
-  // Wait-state knob, hardcoded for now. 0 = zero-wait (PREADY stays HIGH).
+  // Wait-state knob, hardcoded for now. 0 = zero-wait.
   int unsigned wait_states = 0;
 
   // Golden memory model, 9-bit address space
@@ -45,12 +48,17 @@ class slave_driver extends uvm_driver #(apb_seq_item);
       logic [7:0] rdata;
       rdata = mem.exists(vif.slave_cb.PADDR) ? mem[vif.slave_cb.PADDR] : '0;
       vif.slave_cb.PRDATA <= rdata;
+
+      `uvm_info("SLV_DRV_RD",
+        $sformatf("READ detect: PADDR=0x%0h mem_exists=%0b mem_val=0x%0h -> driving PRDATA=0x%0h",
+                  vif.slave_cb.PADDR, mem.exists(vif.slave_cb.PADDR), rdata, rdata),
+        UVM_MEDIUM)
     end
 
     // Advance to ACCESS phase (master raises PENABLE)
     @(vif.slave_cb);
 
-    // Inject wait states: pull PREADY low for N cycles now that PENABLE is high
+    // Inject wait states: pull PREADY low for N cycles
     for (int i = 0; i < wait_states; i++) begin
       vif.slave_cb.PREADY <= 1'b0;
       @(vif.slave_cb);
@@ -62,6 +70,12 @@ class slave_driver extends uvm_driver #(apb_seq_item);
     // Service the access at completion
     if (vif.slave_cb.PWRITE === 1'b1) begin
       mem[vif.slave_cb.PADDR] <= vif.slave_cb.PWDATA;
+
+      `uvm_info("SLV_DRV_WR",
+        $sformatf("WRITE commit: mem[0x%0h] <= 0x%0h",
+                  vif.slave_cb.PADDR, vif.slave_cb.PWDATA),
+        UVM_MEDIUM)
+
       `uvm_info("SLV_DRV",
         $sformatf("APB HANDSHAKE COMPLETE | WRITE addr=0x%0h data=0x%0h",
                   vif.slave_cb.PADDR, vif.slave_cb.PWDATA),
