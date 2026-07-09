@@ -1,28 +1,30 @@
-
-
-class apb_scoreboard extends uvm_scoreboard;
-  `uvm_component_utils(apb_scoreboard)
+`include "uvm_macros.svh"
+import uvm_pkg::*;
 
 `uvm_analysis_imp_decl(_req)
 `uvm_analysis_imp_decl(_comp)
 
-  // Two analysis exports: one for requests, one for completions
+class apb_scoreboard extends uvm_scoreboard;
+  `uvm_component_utils(apb_scoreboard)
+
   uvm_analysis_imp_req  #(apb_seq_item, apb_scoreboard) req_imp;
   uvm_analysis_imp_comp #(apb_seq_item, apb_scoreboard) comp_imp;
 
-  // Queue of outstanding requests (what the master asked for)
   apb_seq_item req_q[$];
-
-  // Golden memory: what SHOULD be at each address, based on writes we've seen
   bit [7:0] shadow_mem [bit [8:0]];
 
-  // Result counters
+  // ---- DATA INTEGRITY counters ----
+  int unsigned data_pass;
+  int unsigned route_err;     // write data/addr didn't reach bus correctly
+  int unsigned loop_err;      // read returned wrong data
+
+  // ---- PROTOCOL counters ----
+  int unsigned ghost_err;     // completion with no matching request
+  int unsigned drop_err;      // request with no completion (end of test)
+
+  // ---- bookkeeping ----
   int unsigned num_req;
   int unsigned num_comp;
-  int unsigned num_pass;
-  int unsigned num_ghost;       // completion with no matching request
-  int unsigned num_route_err;   // write data/addr didn't match request
-  int unsigned num_loop_err;    // read data didn't match memory
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -34,101 +36,92 @@ class apb_scoreboard extends uvm_scoreboard;
     comp_imp = new("comp_imp", this);
   endfunction
 
-  // ---------- Called when the INPUT monitor sees a request (SETUP) ----------
+  // ---------- REQUEST (from input monitor, at SETUP) ----------
   function void write_req(apb_seq_item tr);
     apb_seq_item cloned;
-    $cast(cloned, tr.clone());   // store a copy so later changes don't affect it
+    $cast(cloned, tr.clone());
     req_q.push_back(cloned);
     num_req++;
-    `uvm_info("SB", $sformatf("REQUEST  logged: %s addr=0x%0h wdata=0x%0h",
-              tr.read ? "READ" : "WRITE", tr.addr, tr.wdata), UVM_MEDIUM)
   endfunction
 
-  // ---------- Called when the OUTPUT monitor sees a completion ----------
+  // ---------- COMPLETION (from output monitor, at PENABLE&PREADY) ----------
   function void write_comp(apb_seq_item tr);
     apb_seq_item req;
     num_comp++;
 
-    // --- CHECKER 1: GHOST detection ---
-    // A completion arrived but no request is waiting for it.
+    // ===== PROTOCOL CHECK: ghost =====
     if (req_q.size() == 0) begin
-      num_ghost++;
-      `uvm_error("SB_GHOST",
-        $sformatf("GHOST completion on bus (PADDR=0x%0h PWDATA=0x%0h) with NO matching request. DUT produced a transaction the master never asked for.",
-                  tr.paddr, tr.pwdata))
+      ghost_err++;
+      `uvm_error("SB_PROTOCOL",
+        $sformatf("GHOST completion (PADDR=0x%0h) with no matching request. DUT produced an unrequested transaction.",
+                  tr.paddr))
       return;
     end
 
-    // Pop the oldest outstanding request to match against this completion
     req = req_q.pop_front();
 
     if (req.read == 1'b0) begin
-      // ===== WRITE =====
-      // --- CHECKER 2: write-data routing ---
-      // The data/addr on the bus must match what the master requested.
+      // ===== WRITE: data integrity =====
       if (tr.paddr !== req.addr || tr.pwdata !== req.wdata) begin
-        num_route_err++;
-        `uvm_error("SB_ROUTE",
-          $sformatf("WRITE routing mismatch. Master asked addr=0x%0h data=0x%0h, but bus carried PADDR=0x%0h PWDATA=0x%0h.",
+        route_err++;
+        `uvm_error("SB_DATA",
+          $sformatf("WRITE routing mismatch. Requested addr=0x%0h data=0x%0h, bus PADDR=0x%0h PWDATA=0x%0h.",
                     req.addr, req.wdata, tr.paddr, tr.pwdata))
       end
       else begin
-        shadow_mem[req.addr] = req.wdata;   // record the write in golden memory
-        num_pass++;
-        `uvm_info("SB", $sformatf("WRITE OK: addr=0x%0h data=0x%0h",
-                  req.addr, req.wdata), UVM_MEDIUM)
+        shadow_mem[req.addr] = req.wdata;
+        data_pass++;
       end
     end
     else begin
-      // ===== READ =====
-      // --- CHECKER 3: read loopback ---
-      // Data read back must equal what we previously wrote (golden memory).
+      // ===== READ: data integrity (loopback) =====
       bit [7:0] exp = shadow_mem.exists(req.addr) ? shadow_mem[req.addr] : 8'h00;
       if (tr.rdata !== exp) begin
-        num_loop_err++;
-        `uvm_error("SB_LOOPBACK",
-          $sformatf("READ loopback mismatch. addr=0x%0h expected=0x%0h (from memory), bus PRDATA=0x%0h.",
+        loop_err++;
+        `uvm_error("SB_DATA",
+          $sformatf("READ loopback mismatch. addr=0x%0h expected=0x%0h, bus PRDATA=0x%0h.",
                     req.addr, exp, tr.rdata))
       end
       else begin
-        num_pass++;
-        `uvm_info("SB", $sformatf("READ OK: addr=0x%0h data=0x%0h",
-                  req.addr, exp), UVM_MEDIUM)
+        data_pass++;
       end
     end
   endfunction
 
-  // ---------- End of test: anything left un-matched was DROPPED ----------
+  // ---------- End of test: leftover requests = dropped (protocol) ----------
   function void check_phase(uvm_phase phase);
-    // --- CHECKER 1 (other half): DROP detection ---
     foreach (req_q[i]) begin
-      `uvm_error("SB_DROP",
-        $sformatf("DROPPED transaction: master requested %s addr=0x%0h data=0x%0h but NO completion ever appeared on the bus.",
-                  req_q[i].read ? "READ" : "WRITE",
-                  req_q[i].addr, req_q[i].wdata))
+      drop_err++;
+      `uvm_error("SB_PROTOCOL",
+        $sformatf("DROPPED: request %s addr=0x%0h never completed on the bus.",
+                  req_q[i].read ? "READ" : "WRITE", req_q[i].addr))
     end
   endfunction
 
   function void report_phase(uvm_phase phase);
-    int unsigned num_drop = req_q.size();
-    string verdict = (num_ghost==0 && num_route_err==0 &&
-                      num_loop_err==0 && num_drop==0) ? "PASS" : "FAIL";
+    // Two independent verdicts
+    string data_verdict     = (route_err==0 && loop_err==0)  ? "PASS" : "FAIL";
+    string protocol_verdict = (ghost_err==0 && drop_err==0)  ? "PASS" : "FAIL";
 
     `uvm_info("SB_SUMMARY",
       $sformatf({"\n",
-        "============== APB SCOREBOARD SUMMARY ==============\n",
-        "  Requests seen      : %0d\n",
-        "  Completions seen   : %0d\n",
-        "  Passed             : %0d\n",
-        "  Ghost completions  : %0d\n",
-        "  Dropped requests   : %0d\n",
-        "  Write routing errs : %0d\n",
-        "  Read loopback errs : %0d\n",
-        "  --------------------------------------------------\n",
-        "  RESULT: %s\n",
-        "==================================================="},
-        num_req, num_comp, num_pass, num_ghost, num_drop,
-        num_route_err, num_loop_err, verdict),
+        "================= APB SCOREBOARD =================\n",
+        "  Requests   : %0d      Completions : %0d\n",
+        "  -------------------------------------------------\n",
+        "  DATA INTEGRITY\n",
+        "     passed            : %0d\n",
+        "     write routing err : %0d\n",
+        "     read loopback err : %0d\n",
+        "     >> DATA VERDICT   : %s\n",
+        "  -------------------------------------------------\n",
+        "  PROTOCOL COMPLIANCE\n",
+        "     ghost completions : %0d\n",
+        "     dropped requests  : %0d\n",
+        "     >> PROTOCOL VERDICT: %s\n",
+        "================================================="},
+        num_req, num_comp,
+        data_pass, route_err, loop_err, data_verdict,
+        ghost_err, drop_err, protocol_verdict),
       UVM_NONE)
   endfunction
 
