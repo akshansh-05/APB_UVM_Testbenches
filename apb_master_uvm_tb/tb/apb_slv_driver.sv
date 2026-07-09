@@ -3,7 +3,7 @@ class slave_driver extends uvm_driver #(apb_seq_item);
 
   virtual apb_if vif;
 
-  // Wait-state knob: 0 = zero-wait (your first tests).
+  // Wait-state knob, hardcoded for now. 0 = zero-wait (PREADY stays HIGH).
   int unsigned wait_states = 0;
 
   // Golden memory model, 9-bit address space
@@ -17,7 +17,6 @@ class slave_driver extends uvm_driver #(apb_seq_item);
     super.build_phase(phase);
     if (!uvm_config_db#(virtual apb_if)::get(this, "", "vif", vif))
       `uvm_fatal("SLV_DRV", "Virtual interface not set for slave_driver")
-    void'(uvm_config_db#(int unsigned)::get(this, "", "wait_states", wait_states));
   endfunction
 
   task run_phase(uvm_phase phase);
@@ -34,23 +33,33 @@ class slave_driver extends uvm_driver #(apb_seq_item);
     end
   endtask
 
+  // PREADY parked HIGH (always-ready). PRDATA cleared.
   task reset_signals();
-    vif.slave_cb.PREADY <= 1'b0;
+    vif.slave_cb.PREADY <= 1'b1;
     vif.slave_cb.PRDATA <= '0;
   endtask
 
-  // Handle one full ACCESS phase, protocol-compliant
   task respond_access();
-    // Advance into ACCESS phase (master raises PENABLE)
+    // We are in SETUP. For reads, present data now so it's valid at ACCESS.
+    if (vif.slave_cb.PWRITE === 1'b0) begin
+      logic [7:0] rdata;
+      rdata = mem.exists(vif.slave_cb.PADDR) ? mem[vif.slave_cb.PADDR] : '0;
+      vif.slave_cb.PRDATA <= rdata;
+    end
+
+    // Advance to ACCESS phase (master raises PENABLE)
     @(vif.slave_cb);
 
-    // Inject wait states if configured
-    repeat (wait_states) begin
+    // Inject wait states: pull PREADY low for N cycles now that PENABLE is high
+    for (int i = 0; i < wait_states; i++) begin
       vif.slave_cb.PREADY <= 1'b0;
       @(vif.slave_cb);
     end
 
-    // Completing cycle: assert PREADY, service the access
+    // Loop exited -> PREADY HIGH, handshake completes this cycle
+    vif.slave_cb.PREADY <= 1'b1;
+
+    // Service the access at completion
     if (vif.slave_cb.PWRITE === 1'b1) begin
       mem[vif.slave_cb.PADDR] <= vif.slave_cb.PWDATA;
       `uvm_info("SLV_DRV",
@@ -59,19 +68,11 @@ class slave_driver extends uvm_driver #(apb_seq_item);
         UVM_MEDIUM)
     end
     else begin
-      logic [7:0] rdata;
-      rdata = mem.exists(vif.slave_cb.PADDR) ? mem[vif.slave_cb.PADDR] : '0;
-      vif.slave_cb.PRDATA <= rdata;
       `uvm_info("SLV_DRV",
         $sformatf("APB HANDSHAKE COMPLETE | READ  addr=0x%0h data=0x%0h",
-                  vif.slave_cb.PADDR, rdata),
+                  vif.slave_cb.PADDR, vif.slave_cb.PRDATA),
         UVM_MEDIUM)
     end
-    vif.slave_cb.PREADY <= 1'b1;
-
-    // Hold PREADY for the completing cycle, then deassert
-    @(vif.slave_cb);
-    vif.slave_cb.PREADY <= 1'b0;
   endtask
 
 endclass
