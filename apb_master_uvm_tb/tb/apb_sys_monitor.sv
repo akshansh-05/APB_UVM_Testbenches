@@ -1,46 +1,57 @@
 `include "uvm_macros.svh"
 import uvm_pkg::*;
 
-class apb_sys_monitor extends uvm_monitor;
-  `uvm_component_utils(apb_sys_monitor)
-  virtual apb_if vif;
-  uvm_analysis_port #(apb_seq_item) ap;
+class sys_monitor extends uvm_monitor;
+  `uvm_component_utils(sys_monitor)
 
-  function new(string name = "apb_sys_monitor", uvm_component parent);
+  virtual apb_if vif;
+
+  // Broadcasts one input-side sample per clock to the scoreboard
+  uvm_analysis_port #(apb_seq_item) ap_in;
+
+  function new(string name, uvm_component parent);
     super.new(name, parent);
+    ap_in = new("ap_in", this);
   endfunction
 
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    ap = new("ap", this);
-    if (!uvm_config_db #(virtual apb_if)::get(this, "", "vif", vif))
-      `uvm_fatal("SYS_MON", "Could not get virtual interface 'vif' from config_db")
+    if (!uvm_config_db#(virtual apb_if)::get(this, "", "vif", vif))
+      `uvm_fatal("SYS_MON", "Virtual interface not set for sys_monitor")
   endfunction
 
   task run_phase(uvm_phase phase);
+    apb_seq_item tr;
+
     forever begin
       @(vif.sys_monitor_cb);
 
-      // Emit at handshake completion — system inputs are still valid (driver holds transfer)
-      if (vif.sys_monitor_cb.PENABLE && vif.sys_monitor_cb.PREADY &&
-          (vif.sys_monitor_cb.PSEL1 || vif.sys_monitor_cb.PSEL2)) begin
+      // Only sample when out of reset, so input/output monitors start in lockstep
+      if (vif.PRESETn === 1'b1) begin
+        tr = apb_seq_item::type_id::create("in_tr");
 
-        apb_seq_item item = apb_seq_item::type_id::create("item");
-        item.read = vif.sys_monitor_cb.READ_WRITE;
+        // FSM inputs the DUT sees this cycle
+        tr.transfer = vif.sys_monitor_cb.transfer;
+        tr.read     = vif.sys_monitor_cb.READ_WRITE;   // 1 = read, 0 = write
 
-        if (item.read) begin
-          item.addr  = vif.sys_monitor_cb.apb_read_paddr;
-          item.rdata = vif.sys_monitor_cb.apb_read_data_out;
-        end else begin
-          item.addr  = vif.sys_monitor_cb.apb_write_paddr;
-          item.wdata = vif.sys_monitor_cb.apb_write_data;
-        end
+        // Master presents read or write address depending on direction
+        tr.addr     = vif.sys_monitor_cb.READ_WRITE ?
+                      vif.sys_monitor_cb.apb_read_paddr :
+                      vif.sys_monitor_cb.apb_write_paddr;
 
-        `uvm_info("SYS_MON", $sformatf("EXPECTED %s: addr=0x%03h data=0x%02h",
-                  item.read ? "READ" : "WRITE", item.addr,
-                  item.read ? item.rdata : item.wdata), UVM_LOW)
-        ap.write(item);
+        tr.wdata    = vif.sys_monitor_cb.apb_write_data;
+
+        // PREADY is a slave-driven FSM input (needed for wait-state modelling)
+        tr.pready   = vif.sys_monitor_cb.PREADY;
+
+        `uvm_info("SYS_MON",
+          $sformatf("transfer=%0b read=%0b addr=0x%0h wdata=0x%0h pready=%0b",
+                    tr.transfer, tr.read, tr.addr, tr.wdata, tr.pready),
+          UVM_MEDIUM)
+
+        ap_in.write(tr);
       end
     end
   endtask
+
 endclass
