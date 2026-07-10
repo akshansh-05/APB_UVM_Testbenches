@@ -7,7 +7,6 @@ class slave_monitor extends uvm_monitor;
   virtual apb_if vif;
   uvm_analysis_port #(apb_seq_item) ap_out;
 
-  // Edge-detection: remember if transfer was completing last cycle
   bit completing_prev;
 
   function new(string name, uvm_component parent);
@@ -35,13 +34,12 @@ class slave_monitor extends uvm_monitor;
         continue;
       end
 
-      // Transfer completes this cycle?
       completing_now = (vif.monitor_cb.PENABLE === 1'b1 &&
                         vif.monitor_cb.PREADY  === 1'b1);
 
-      // Log a completion only on the RISING edge (one per completed transfer)
+      // One Actual per completed transfer (rising edge of completion)
       if (completing_now && !completing_prev) begin
-        tr = apb_seq_item::type_id::create("comp");
+        tr = apb_seq_item::type_id::create("act");
         tr.paddr   = vif.monitor_cb.PADDR;
         tr.pwrite  = vif.monitor_cb.PWRITE;
         tr.pwdata  = vif.monitor_cb.PWDATA;

@@ -1,3 +1,6 @@
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
 class sys_driver extends uvm_driver #(apb_seq_item);
   `uvm_component_utils(sys_driver)
 
@@ -23,7 +26,6 @@ class sys_driver extends uvm_driver #(apb_seq_item);
     end
   endtask
 
-  // Park all system outputs in a known-idle state
   task reset_signals();
     vif.master_cb.transfer         <= 1'b0;
     vif.master_cb.READ_WRITE       <= 1'b0;
@@ -32,14 +34,11 @@ class sys_driver extends uvm_driver #(apb_seq_item);
     vif.master_cb.apb_write_data   <= '0;
   endtask
 
-  // Drive one system-level transaction, synchronous to master_cb
   task drive_transfer(apb_seq_item tr);
     @(vif.master_cb);
 
-    // Present request on the driving edge.
-    // Single addr feeds both read/write paddr; DUT selects via READ_WRITE.
     vif.master_cb.transfer        <= 1'b1;
-    vif.master_cb.READ_WRITE      <= tr.read;          // 1 = read, 0 = write
+    vif.master_cb.READ_WRITE      <= tr.read;
     vif.master_cb.apb_read_paddr  <= tr.addr;
     vif.master_cb.apb_write_paddr <= tr.addr;
     vif.master_cb.apb_write_data  <= tr.wdata;
@@ -49,14 +48,13 @@ class sys_driver extends uvm_driver #(apb_seq_item);
                 tr.read ? "READ" : "WRITE", tr.addr, tr.wdata),
       UVM_MEDIUM)
 
-    // Wait synchronously for APB completion: PENABLE && PREADY
     do @(vif.master_cb);
     while (!(vif.master_cb.PENABLE === 1'b1 && vif.master_cb.PREADY === 1'b1));
 
-    // Access completed -> release request for next cycle
+    // Per-item pulse: drop transfer after completion; next item re-raises it.
     vif.master_cb.transfer <= 1'b0;
 
-    `uvm_info("SYS_DRV", "Transfer accepted by APB side (PENABLE & PREADY)", UVM_HIGH)
+    `uvm_info("SYS_DRV", "Transfer accepted (PENABLE & PREADY)", UVM_HIGH)
   endtask
 
 endclass

@@ -22,8 +22,8 @@ class apb_env extends uvm_env;
 
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-    sys_agent.mon.ap.connect(scoreboard.exp_port);
-    slv_agent.mon.ap.connect(scoreboard.act_port);
+    sys_agent.mon.ap_in.connect(scoreboard.exp_imp);     // Expected from system monitor
+    slv_agent.mon.ap_out.connect(scoreboard.act_imp);    // Actual from slave monitor
   endfunction
 
 endclass

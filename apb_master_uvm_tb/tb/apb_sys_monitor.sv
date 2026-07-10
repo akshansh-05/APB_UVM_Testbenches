@@ -7,8 +7,7 @@ class sys_monitor extends uvm_monitor;
   virtual apb_if vif;
   uvm_analysis_port #(apb_seq_item) ap_in;
 
-  // Edge-detection: remember if we were in SETUP last cycle
-  bit in_setup_prev;
+  bit transfer_prev;
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -23,26 +22,22 @@ class sys_monitor extends uvm_monitor;
 
   task run_phase(uvm_phase phase);
     apb_seq_item tr;
-    bit in_setup_now;
 
-    in_setup_prev = 1'b0;
+    transfer_prev = 1'b0;
 
     forever begin
       @(vif.sys_monitor_cb);
 
       if (vif.PRESETn !== 1'b1) begin
-        in_setup_prev = 1'b0;   // reset edge tracking
+        transfer_prev = 1'b0;
         continue;
       end
 
-      // SETUP phase this cycle?
-      in_setup_now = (vif.sys_monitor_cb.PSEL1 === 1'b1 ||
-                      vif.sys_monitor_cb.PSEL2 === 1'b1) &&
-                      vif.sys_monitor_cb.PENABLE === 1'b0;
-
-      // Log a request only on the RISING edge of SETUP (new SETUP entry)
-      if (in_setup_now && !in_setup_prev) begin
-        tr = apb_seq_item::type_id::create("req");
+      // Rising edge of transfer = one new system request.
+      // Samples the SYSTEM-SIDE request (ground truth), independent of
+      // what the bridge produces on the APB bus.
+      if (vif.sys_monitor_cb.transfer === 1'b1 && transfer_prev === 1'b0) begin
+        tr = apb_seq_item::type_id::create("exp");
         tr.read  = vif.sys_monitor_cb.READ_WRITE;
         tr.addr  = vif.sys_monitor_cb.READ_WRITE ?
                    vif.sys_monitor_cb.apb_read_paddr :
@@ -57,7 +52,7 @@ class sys_monitor extends uvm_monitor;
         ap_in.write(tr);
       end
 
-      in_setup_prev = in_setup_now;
+      transfer_prev = vif.sys_monitor_cb.transfer;
     end
   endtask
 

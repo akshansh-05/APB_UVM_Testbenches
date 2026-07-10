@@ -6,7 +6,6 @@ class slave_driver extends uvm_driver #(apb_seq_item);
 
   virtual apb_if vif;
 
-  // Golden memory model, 9-bit address space
   logic [7:0] mem [logic [8:0]];
 
   function new(string name, uvm_component parent);
@@ -25,20 +24,17 @@ class slave_driver extends uvm_driver #(apb_seq_item);
     forever begin
       @(vif.slave_cb);
 
-      // Always ready (zero-wait slave)
-      vif.slave_cb.PREADY <= 1'b1;
+      vif.slave_cb.PREADY <= 1'b1;   // always ready (zero-wait)
 
-      // Respond only when selected by the master
       if (vif.slave_cb.PSEL1 === 1'b1 || vif.slave_cb.PSEL2 === 1'b1) begin
 
-        // ---- READ: drive PRDATA for the addressed location every cycle ----
-        // Presented continuously so it is valid when ACCESS completes.
+        // READ: present data for the addressed location every cycle
         if (vif.slave_cb.PWRITE === 1'b0) begin
           vif.slave_cb.PRDATA <= mem.exists(vif.slave_cb.PADDR) ?
                                  mem[vif.slave_cb.PADDR] : 8'h00;
         end
 
-        // ---- WRITE: capture data at the completing edge ----
+        // WRITE: capture at completing edge
         if (vif.slave_cb.PWRITE  === 1'b1 &&
             vif.slave_cb.PENABLE === 1'b1 &&
             vif.slave_cb.PREADY  === 1'b1) begin
@@ -49,7 +45,6 @@ class slave_driver extends uvm_driver #(apb_seq_item);
             UVM_MEDIUM)
         end
 
-        // ---- READ completion log ----
         if (vif.slave_cb.PWRITE  === 1'b0 &&
             vif.slave_cb.PENABLE === 1'b1 &&
             vif.slave_cb.PREADY  === 1'b1) begin
