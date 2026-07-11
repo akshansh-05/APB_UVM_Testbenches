@@ -17,12 +17,23 @@ class sys_driver extends uvm_driver #(apb_seq_item);
   endfunction
 
   task run_phase(uvm_phase phase);
+    apb_seq_item tr;
+
     reset_signals();
 
     forever begin
-      seq_item_port.get_next_item(req);
-      drive_transfer(req);
-      seq_item_port.item_done();
+      // Peek without blocking so transfer can stay HIGH across a burst
+      seq_item_port.try_next_item(tr);
+
+      if (tr == null) begin
+        // Sequencer empty -> master no longer requesting: drop transfer
+        vif.master_cb.transfer <= 1'b0;
+        @(vif.master_cb);
+      end
+      else begin
+        drive_transfer(tr);
+        seq_item_port.item_done();
+      end
     end
   endtask
 
@@ -37,6 +48,8 @@ class sys_driver extends uvm_driver #(apb_seq_item);
   task drive_transfer(apb_seq_item tr);
     @(vif.master_cb);
 
+    // transfer stays HIGH through the burst; it is dropped only in run_phase
+    // when try_next_item finds the sequencer empty.
     vif.master_cb.transfer        <= 1'b1;
     vif.master_cb.READ_WRITE      <= tr.read;
     vif.master_cb.apb_read_paddr  <= tr.addr;
@@ -48,11 +61,9 @@ class sys_driver extends uvm_driver #(apb_seq_item);
                 tr.read ? "READ" : "WRITE", tr.addr, tr.wdata),
       UVM_MEDIUM)
 
+    // Hold stimulus stable until APB completion. transfer NOT dropped here.
     do @(vif.master_cb);
     while (!(vif.master_cb.PENABLE === 1'b1 && vif.master_cb.PREADY === 1'b1));
-
-    // Per-item pulse: drop transfer after completion; next item re-raises it.
-    vif.master_cb.transfer <= 1'b0;
 
     `uvm_info("SYS_DRV", "Transfer accepted (PENABLE & PREADY)", UVM_HIGH)
   endtask

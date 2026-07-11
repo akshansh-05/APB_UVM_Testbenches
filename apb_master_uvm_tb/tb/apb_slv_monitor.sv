@@ -1,5 +1,3 @@
-`include "uvm_macros.svh"
-import uvm_pkg::*;
 
 class slave_monitor extends uvm_monitor;
   `uvm_component_utils(slave_monitor)
@@ -7,7 +5,7 @@ class slave_monitor extends uvm_monitor;
   virtual apb_if vif;
   uvm_analysis_port #(apb_seq_item) ap_out;
 
-  bit completing_prev;
+  bit completing_prev;   // edge-detect completion
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -34,12 +32,14 @@ class slave_monitor extends uvm_monitor;
         continue;
       end
 
+      // Completion = transfer finishes on the bus (PENABLE && PREADY)
       completing_now = (vif.monitor_cb.PENABLE === 1'b1 &&
                         vif.monitor_cb.PREADY  === 1'b1);
 
-      // One Actual per completed transfer (rising edge of completion)
+      // One item per completion (rising edge)
       if (completing_now && !completing_prev) begin
         tr = apb_seq_item::type_id::create("act");
+
         tr.paddr   = vif.monitor_cb.PADDR;
         tr.pwrite  = vif.monitor_cb.PWRITE;
         tr.pwdata  = vif.monitor_cb.PWDATA;
