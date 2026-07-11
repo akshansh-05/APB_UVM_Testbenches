@@ -21,6 +21,8 @@ class sys_driver extends uvm_driver #(apb_seq_item);
 
     reset_signals();
 
+wait(vif.PRESETn == 1'b1);
+    @(vif.master_cb);
     forever begin
       // Peek without blocking so transfer can stay HIGH across a burst
       seq_item_port.try_next_item(tr);
@@ -46,7 +48,6 @@ class sys_driver extends uvm_driver #(apb_seq_item);
   endtask
 
   task drive_transfer(apb_seq_item tr);
-    @(vif.master_cb);
 
     // transfer stays HIGH through the burst; it is dropped only in run_phase
     // when try_next_item finds the sequencer empty.

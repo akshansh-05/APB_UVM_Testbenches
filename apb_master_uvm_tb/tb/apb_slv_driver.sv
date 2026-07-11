@@ -6,7 +6,7 @@ class slave_driver extends uvm_driver #(apb_seq_item);
 
   virtual apb_if vif;
 
-  logic [7:0] mem [logic [8:0]];
+  bit [7:0] mem [bit [8:0]];
 
   function new(string name, uvm_component parent);
     super.new(name, parent);
@@ -20,7 +20,7 @@ class slave_driver extends uvm_driver #(apb_seq_item);
 
   task run_phase(uvm_phase phase);
     reset_signals();
-
+wait(vif.PRESETn==1'b1); 
     forever begin
       @(vif.slave_cb);
 
@@ -38,7 +38,7 @@ class slave_driver extends uvm_driver #(apb_seq_item);
         if (vif.slave_cb.PWRITE  === 1'b1 &&
             vif.slave_cb.PENABLE === 1'b1 &&
             vif.slave_cb.PREADY  === 1'b1) begin
-          mem[vif.slave_cb.PADDR] <= vif.slave_cb.PWDATA;
+          mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
           `uvm_info("SLV_DRV",
             $sformatf("APB HANDSHAKE COMPLETE | WRITE addr=0x%0h data=0x%0h",
                       vif.slave_cb.PADDR, vif.slave_cb.PWDATA),
