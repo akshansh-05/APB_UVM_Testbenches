@@ -9,7 +9,7 @@ module master_bridge(
         output reg [8:0]PADDR,
         output reg PWRITE,
         output reg [7:0]PWDATA,apb_read_data_out,
-        input PSLVERR );
+        output PSLVERR );
         // integer i,count;
 
 reg [2:0] state, next_state;
@@ -138,6 +138,6 @@ always @(*) begin
         invalid_setup_error = setup_error ||  invalid_read_paddr || invalid_write_data || invalid_write_paddr ;
 end
 
-// assign PSLVERR =  invalid_setup_error ;
+ assign PSLVERR =  invalid_setup_error ;
 
 endmodule
