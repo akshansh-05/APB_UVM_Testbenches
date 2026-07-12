@@ -4,6 +4,8 @@ import uvm_pkg::*;
 class slave_driver extends uvm_driver #(apb_seq_item);
   `uvm_component_utils(slave_driver)
 
+int wait_cycles = 2;   // hardcoded; set to 0 for zero-wait
+
   virtual apb_if vif;
 
   bit [7:0] mem [bit [8:0]];
@@ -20,40 +22,54 @@ class slave_driver extends uvm_driver #(apb_seq_item);
 
   task run_phase(uvm_phase phase);
     reset_signals();
-wait(vif.PRESETn==1'b1); 
+    wait (vif.PRESETn == 1'b1);
+
     forever begin
       @(vif.slave_cb);
 
-      vif.slave_cb.PREADY <= 1'b1;   // always ready (zero-wait)
-
       if (vif.slave_cb.PSEL1 === 1'b1 || vif.slave_cb.PSEL2 === 1'b1) begin
 
-        // READ: present data for the addressed location every cycle
+        // ---- READ: present data for the addressed location ----
         if (vif.slave_cb.PWRITE === 1'b0) begin
           vif.slave_cb.PRDATA <= mem.exists(vif.slave_cb.PADDR) ?
                                  mem[vif.slave_cb.PADDR] : 8'h00;
         end
 
-        // WRITE: capture at completing edge
-        if (vif.slave_cb.PWRITE  === 1'b1 &&
-            vif.slave_cb.PENABLE === 1'b1 &&
-            vif.slave_cb.PREADY  === 1'b1) begin
-          mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
-          `uvm_info("SLV_DRV",
-            $sformatf("APB HANDSHAKE COMPLETE | WRITE addr=0x%0h data=0x%0h",
-                      vif.slave_cb.PADDR, vif.slave_cb.PWDATA),
-            UVM_MEDIUM)
-        end
+        // ---- ACCESS phase: stall for wait_cycles, then complete ----
+        if (vif.slave_cb.PENABLE === 1'b1) begin
 
-        if (vif.slave_cb.PWRITE  === 1'b0 &&
-            vif.slave_cb.PENABLE === 1'b1 &&
-            vif.slave_cb.PREADY  === 1'b1) begin
-          `uvm_info("SLV_DRV",
-            $sformatf("APB HANDSHAKE COMPLETE | READ  addr=0x%0h data=0x%0h",
-                      vif.slave_cb.PADDR,
-                      mem.exists(vif.slave_cb.PADDR) ? mem[vif.slave_cb.PADDR] : 8'h00),
-            UVM_MEDIUM)
+          // Hold PREADY LOW for wait_cycles clocks
+          repeat (wait_cycles) begin
+            vif.slave_cb.PREADY <= 1'b0;
+            `uvm_info("SLV_DRV",
+              $sformatf("WAIT STATE | addr=0x%0h", vif.slave_cb.PADDR), UVM_HIGH)
+            @(vif.slave_cb);
+          end
+
+          // Wait expired -> complete the transfer
+          vif.slave_cb.PREADY <= 1'b1;
+          @(vif.slave_cb);
+
+          // ---- Capture on the completion edge ----
+          if (vif.slave_cb.PWRITE === 1'b1) begin
+            mem[vif.slave_cb.PADDR] = vif.slave_cb.PWDATA;
+            `uvm_info("SLV_DRV",
+              $sformatf("APB HANDSHAKE COMPLETE | WRITE addr=0x%0h data=0x%0h",
+                        vif.slave_cb.PADDR, vif.slave_cb.PWDATA), UVM_MEDIUM)
+          end
+          else begin
+            `uvm_info("SLV_DRV",
+              $sformatf("APB HANDSHAKE COMPLETE | READ  addr=0x%0h data=0x%0h",
+                        vif.slave_cb.PADDR,
+                        mem.exists(vif.slave_cb.PADDR) ? mem[vif.slave_cb.PADDR] : 8'h00),
+              UVM_MEDIUM)
+          end
+
         end
+      end
+      else begin
+        // Not selected: idle
+        vif.slave_cb.PREADY <= 1'b1;
       end
     end
   endtask
@@ -62,5 +78,3 @@ wait(vif.PRESETn==1'b1);
     vif.slave_cb.PREADY <= 1'b1;
     vif.slave_cb.PRDATA <= '0;
   endtask
-
-endclass
